@@ -134,3 +134,5 @@ table.claim td.num, table.claim th.num { text-align: right; font-variant-numeric
 .proof .facts .chip { font-size: .8125rem; }
 .proof .stamp { margin: var(--s3) 0 0; color: var(--text-muted); font-size: .75rem; font-variant-numeric: tabular-nums; }
 @media (max-width: 640px) { .ask-row { grid-template-columns: 1fr; } }
+.proof .stakes { margin: var(--s3) 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s2); }
+.proof .stakes .money { font-size: 1.5rem; font-weight: 650; font-variant-numeric: tabular-nums; }

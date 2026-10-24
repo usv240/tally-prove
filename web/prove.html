@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prove your agent's answer</title>
+<meta name="description" content="Paste what your agent said about the CACFP meal pattern and get a proof against the regulation in a few seconds, from Amazon Bedrock Automated Reasoning checks.">
+<script>
+  (function () {
+    try {
+      var m = localStorage.getItem("tally-theme");
+      document.documentElement.setAttribute("data-theme", m && m !== "system" ? m : "light");
+    } catch (e) {}
+  })();
+</script>
+<link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="app.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230F6E56'/></svg>">
+<style>
+  .prove-form { display: grid; gap: var(--s4); }
+  .prove-form label { display: block; font-weight: 550; font-size: .9375rem; margin-bottom: var(--s1); }
+  .prove-form textarea, .prove-form input {
+    width: 100%; min-height: 48px; padding: var(--s2) var(--s3); font: inherit; font-size: 1rem;
+    color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm);
+  }
+  .prove-form textarea { min-height: 72px; resize: vertical; }
+  .prove-form textarea:focus-visible, .prove-form input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-color: var(--accent); }
+  .verdict { font-size: 1.75rem; font-weight: 650; margin: 0 0 var(--s2); }
+  .verdict.ok { color: var(--success); } .verdict.bad { color: var(--danger); } .verdict.open { color: var(--warning); }
+  pre.formula { white-space: pre-wrap; overflow-wrap: anywhere; }
+</style>
+</head>
+<body class="app">
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site">
+  <div class="bar">
+    <a class="brand" href="index.html"><span class="mark" aria-hidden="true"></span> Tally</a>
+    <div class="header-actions">
+      <div class="theme-toggle"></div>
+      <a class="btn small" href="app.html">The live demo</a>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="wrap" style="padding-top:var(--s5);padding-bottom:var(--s8)">
+  <a class="backlink" href="index.html"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 L5 8 l5 5"/></svg>Back to the overview</a>
+
+  <h1 style="font-size:1.5rem;margin:0 0 var(--s2)">Prove your agent's answer</h1>
+  <p class="muted" style="margin:0 0 var(--s5);max-width:68ch">
+    Paste a provider's question about the food program and what your agent, or you, answered.
+    Amazon Bedrock Automated Reasoning checks it against 7 CFR 226.20 held as formal logic and
+    says whether the rules prove it, contradict it, or need one more fact. This is the same
+    <code>prove_answer</code> Tally's agent calls, running as an AWS Lambda with no Tally around it.
+    <button class="info" data-tip="prove_answer" data-label="proved answers"></button>
+  </p>
+
+  <section class="card" aria-labelledby="prove-h">
+    <h2 id="prove-h" style="font-size:1.125rem">Try it</h2>
+    <form id="prove-form" class="prove-form">
+      <div>
+        <label for="q">The question</label>
+        <input id="q" value="Can I serve the strawberry yogurt cups as the meat alternate at snack?">
+      </div>
+      <div>
+        <label for="f">What is known (one short sentence each)</label>
+        <textarea id="f">The meal is a snack. The children are 3 to 5 years old. The yogurt has 17 grams of added sugars per 6 ounces.</textarea>
+      </div>
+      <div>
+        <label for="a">The answer to check</label>
+        <textarea id="a">Yes. Yogurt credits as a meat alternate and 17 grams is under the 23 gram limit.</textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn primary" type="submit" id="go">Prove it</button>
+        <button class="btn" type="button" id="ex-right">Try a right answer</button>
+        <button class="btn" type="button" id="ex-open">Try one that needs a fact</button>
+      </div>
+    </form>
+    <div id="out" role="status" aria-live="polite" style="margin-top:var(--s5)" hidden></div>
+  </section>
+
+  <section class="card" style="margin-top:var(--s5)">
+    <h2 style="font-size:1.125rem">Call it from your own code</h2>
+    <pre class="formula" id="curl"></pre>
+    <p class="muted small" style="margin:var(--s3) 0 0">No key, no Tally. The reply has <code>verdict</code>, the <code>rules</code> it rests on or breaks in the regulation's words, the <code>premises</code> the logic read, and <code>missing_facts</code> when one more fact would decide it. For a Strands agent, <code>from tally.strands_hook import ProveAnswers</code> and pass <code>hooks=[ProveAnswers()]</code>; every answer is proved with no prompt changes.</p>
+  </section>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <div><a href="index.html">Overview</a> &middot; <a href="app.html">The live demo</a>
+      &middot; <a href="https://github.com/usv240/tally-prove">Source, MIT</a></div>
+    <div class="theme-toggle"></div>
+  </div>
+</footer>
+
+<script src="infotips.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  "use strict";
+  var URL = "https://c67dxiivpxxdgwmvgugptpbxqa0vvkuz.lambda-url.us-east-1.on.aws/";
+  var $ = function (id) { return document.getElementById(id); };
+  var WORDS = {
+    VALID: ["ok", "Proved", "The rules prove this answer."],
+    INVALID: ["bad", "Contradicts a rule", "The rules contradict this answer."],
+    IMPOSSIBLE: ["bad", "The situation breaks a rule", "What was described is not allowed, whatever the answer says."],
+    SATISFIABLE: ["open", "Needs one fact", "True under some facts, false under others."],
+    AMBIGUOUS: ["open", "Needs one fact", "The sentence has two readings."],
+    UNVERIFIED: ["", "Outside the rulebook", "Nothing in the answer maps onto the meal pattern rules."],
+    SKIPPED: ["", "Not checked", "The checker did not run."]
+  };
+  function curl() {
+    $("curl").textContent = "curl -X POST " + URL + " \\\n  -H 'content-type: application/json' \\\n  -d '" +
+      JSON.stringify({ question: $("q").value, facts: $("f").value, answer: $("a").value }, null, 0).replace(/'/g, "'\\''") + "'";
+  }
+  function render(d) {
+    var w = WORDS[d.verdict] || WORDS.UNVERIFIED;
+    var out = $("out"); out.hidden = false; out.innerHTML = "";
+    out.appendChild(window.h("p", { class: "verdict " + w[0], text: w[1] }));
+    out.appendChild(window.h("p", { class: "muted", style: "margin:0 0 var(--s3)", text: w[2] + " " + (d.latency_ms / 1000).toFixed(1) + " s." }));
+    if (d.rules && d.rules.length) {
+      out.appendChild(window.h("blockquote", { class: "rule " + (w[0] === "bad" ? "breaks" : "holds"), style: "margin:0 0 var(--s3)" }, [
+        window.h("strong", { text: w[0] === "bad" ? "The rule it breaks" : "The rule it rests on" }),
+        window.h("span", { text: d.rules[0] })]));
+    }
+    if (d.missing_facts && d.missing_facts.length && w[0] === "open") {
+      out.appendChild(window.h("blockquote", { class: "rule missing", style: "margin:0 0 var(--s3)" }, [
+        window.h("strong", { text: "What would settle it" }), window.h("span", { text: d.missing_facts.slice(0, 2).join("; ") })]));
+    }
+    if (d.premises && d.premises.length) {
+      out.appendChild(window.h("p", { class: "small muted", style: "margin:0 0 var(--s1)", text: "What the logic read from the facts:" }));
+      out.appendChild(window.h("div", { class: "facts", style: "margin:0" }, d.premises.slice(0, 5).map(function (f) {
+        return window.h("span", { class: "chip", text: f.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([a-z])(\d)/g, "$1 $2").toLowerCase().replace(/[a-z ]+type_/g, "").replace(/_/g, " ") });
+      })));
+    }
+    window.MountInfo();
+  }
+  $("prove-form").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var go = $("go"); go.disabled = true; go.textContent = "Proving, about six seconds";
+    fetch(URL, { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ question: $("q").value, facts: $("f").value, answer: $("a").value }) })
+      .then(function (r) { return r.json(); }).then(render)
+      .catch(function (e) { var out = $("out"); out.hidden = false; out.textContent = "The proof service did not answer: " + e; })
+      .then(function () { go.disabled = false; go.textContent = "Prove it"; });
+  });
+  $("ex-right").addEventListener("click", function () {
+    $("f").value = "The meal is a snack. The children are 3 to 5 years old. The yogurt has 9 grams of added sugars per 6 ounces.";
+    $("a").value = "Yes. Yogurt is creditable as a meat alternate because 9 grams of added sugars per 6 ounces is within the 12 gram limit.";
+    curl();
+  });
+  $("ex-open").addEventListener("click", function () {
+    $("f").value = "The meal is a snack. The children are 3 to 5 years old.";
+    $("a").value = "Yes, the yogurt is creditable as a meat alternate.";
+    curl();
+  });
+  ["q", "f", "a"].forEach(function (id) { $(id).addEventListener("input", curl); });
+  curl();
+  window.MountInfo();
+})();
+</script>
+</body>
+</html>

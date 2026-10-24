@@ -20,7 +20,7 @@ modules 1.18 did not. The corrected list is below, including the ones that omiss
 | `strands.multiagent.GraphBuilder` | yes | `agents/graph.py`, conditional edges on the confidence gate |
 | `strands.tools.mcp.MCPClient` | yes | `mcp/sponsor.py`, a reviewer's agent holding no Tally code |
 | `strands.telemetry` | yes | `observability.py`, OTLP spans for AgentCore Observability |
-| `strands.hooks` | no | See below |
+| `strands.hooks` | yes, since October 2026 | `strands_hook.py`: `ProveAnswers` proves every final answer on `AfterInvocationEvent`, for agents whose prompt you do not control. The Day agent itself uses the tool form, so the model can act on the verdict mid-turn |
 | `strands.session` | no | See below |
 | `strands.interrupt` | no | See below |
 | `strands.experimental` | no | Explicitly unstable. Not in something a provider's income depends on |

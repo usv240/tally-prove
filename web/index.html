@@ -90,7 +90,7 @@
         <h3>Before</h3>
         <p class="quote" style="margin:0 0 var(--s3)">"Can I serve the strawberry yogurt cups as the meat alternate at snack? The label says 17 grams."</p>
         <p style="margin:0"><span class="badge critical"><span class="shape" aria-hidden="true">&#x2B23;</span><span>wrong since October 2025</span></span></p>
-        <p class="muted" style="margin:var(--s2) 0 0">"Yes. Yogurt credits as a meat alternate and 17 grams is under the 23 gram limit." Confident, and the meal is disallowed at review.</p>
+        <p class="muted" style="margin:var(--s2) 0 0">"Yes. Yogurt credits as a meat alternate and 17 grams is under the 23 gram limit." Confident, and the meal is disallowed at review. Followed for a month, that one answer is <strong>$194.04</strong> not paid for Rosa's nine children, at this year's snack rate.<button class="info" data-tip="lost_amount" data-label="the lost amount"></button></p>
       </div>
       <div class="card">
         <h3>After, same agent, same question</h3>
@@ -104,13 +104,16 @@
 
     <p>
       The first thing the tool caught was us: pointed at Tally's own rulebook, it found the yogurt
-      limit in <code>rules/cacfp_rules.json</code> had expired a year earlier. Measurements against
+      limit in <code>rules/cacfp_rules.json</code> had expired a year earlier. On 30 questions USDA
+      has answered, the same model as a plain assistant served 9 wrong answers; Tally with the tool
+      served 1, and asked for the missing fact on 12. Measurements against
       questions USDA answered, and the audit, are in
       <a href="https://github.com/usv240/tally-prove/blob/main/docs/EVAL.md">docs/EVAL.md</a>.
     </p>
     <div class="btn-row">
       <a class="btn primary" href="app.html#ask">Ask Tally a rule question</a>
-      <a class="btn" href="#api">Call the tool from your own agent</a>
+      <a class="btn" href="prove.html">Prove your own agent's answer</a>
+      <a class="btn" href="#api">Call the tool from your own code</a>
     </div>
   </div>
 </section>

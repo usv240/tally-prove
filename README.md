@@ -143,7 +143,19 @@ regulation".
 food program claim stays reviewable. Nobody can edit or delete it, Tally included. The agent never
 reads the bucket; it is where the tool's evidence lands, the way a claim lands on the sponsor's desk.
 
-**Reuse the pattern** in your own Strands agent, in about twenty lines:
+**Try it on your own agent's answer** without installing anything: <https://dtvxrkiam6.us-east-1.awsapprunner.com/prove.html>.
+
+**Reuse the pattern** in your own Strands agent with one line, no prompt changes:
+
+```python
+from strands import Agent
+from tally.strands_hook import ProveAnswers
+
+proofs = ProveAnswers(on_invalid=lambda q, a, checked: print("do not send:", checked.rules[0]))
+agent = Agent(tools=[...], hooks=[proofs])      # every final answer is proved after the turn
+```
+
+Or as a tool the model calls itself, so it can act on the verdict mid-turn, in about twenty lines:
 
 ```python
 import boto3

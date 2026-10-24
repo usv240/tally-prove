@@ -50,6 +50,13 @@ def test_the_monthly_loss_figure_quoted_on_the_landing_page():
     assert lost_value([(L, 6 * 22)], "tier_1") == 436.92
 
 
+def test_the_wrong_yogurt_answer_costs_rosa_194_04_a_month():
+    """The figure on the proof card and the project page: a snack a day, nine children, 22 days, tier 1."""
+    from tally.models import MealType
+
+    assert lost_value([(MealType.SNACK, 9 * 22)], "tier_1") == 194.04
+
+
 def test_a_lost_snack_a_day_costs_129_36():
     assert lost_value([(SN, 6 * 22)], "tier_1") == 129.36
 

@@ -111,6 +111,18 @@ def run_agents(cases: dict, conditions: tuple[str, ...] = ("no_tool", "debate", 
             if cond == "no_tool":
                 answer = ask(c["question"], with_prove=False)["answer"]
                 checks = 0
+            elif cond == "plain":
+                # A general assistant: the same model, a one-line system prompt, no Tally, no tool.
+                # This is the NYC chatbot shape: a capable model answering a rules question from memory.
+                from strands import Agent
+
+                from tally.agents.models import reasoning_model
+
+                bot = Agent(model=reasoning_model(), callback_handler=None,
+                            system_prompt="You are a helpful assistant. Answer the question directly "
+                                          "in one or two sentences.")
+                answer = str(bot(c["question"])).strip()
+                checks = 0
             elif cond == "tool":
                 out = ask(c["question"], with_prove=True)
                 answer, checks = out["answer"], len(out["proof_ids"])
@@ -179,15 +191,18 @@ def render(solver: dict | None, agents: dict | None) -> str:
         lines.append("")
     if agents:
         a = agents
-        lines += ["### The same agent three ways", "",
+        lines += ["### The same model four ways", "",
                   "Every final answer was proved against the regulation with the case's facts. "
                   "\"Wrong served\" is a final answer the rules contradict. \"Asked\" is an agent that "
                   "put a question to the provider instead of answering.", "",
                   "| Condition | Wrong answers served | Proved correct | Asked a question | Undecided | Median time |",
                   "|---|---|---|---|---|---|"]
-        names = {"no_tool": "Tally, September build (no tool)", "debate": "Two agents debate, a judge decides",
+        names = {"plain": "A general assistant (same model, no Tally, no tool)",
+                 "no_tool": "Tally, September build (no tool)", "debate": "Two agents debate, a judge decides",
                  "tool": "Tally with prove_answer"}
-        for cond, v in a["summary"].items():
+        order = ["plain", "no_tool", "debate", "tool"]
+        for cond in sorted(a["summary"], key=lambda k: order.index(k) if k in order else 9):
+            v = a["summary"][cond]
             lines.append(f"| {names.get(cond, cond)} | {v['wrong_served']} of {a['n']} | {v['proved']} | "
                          f"{v['asked']} | {v['undecided']} | {v['median_seconds']:.0f} s |")
         lines.append("")
@@ -200,12 +215,26 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--solver", action="store_true")
     ap.add_argument("--agents", action="store_true")
+    ap.add_argument("--conditions", default=None,
+                    help="comma-separated subset to (re)run and merge, e.g. plain; default runs all three")
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
     cases = load_cases()
     prev = json.loads(RESULTS.read_text()) if RESULTS.exists() else {}
     solver = run_solver(cases) if a.solver else prev.get("solver")
-    agents = run_agents(cases) if a.agents else prev.get("agents")
+    agents = prev.get("agents")
+    if a.agents:
+        conds = tuple(a.conditions.split(",")) if a.conditions else ("no_tool", "debate", "tool")
+        fresh = run_agents(cases, conds)
+        if agents and a.conditions:
+            # Merge one rerun condition into the saved rows, so a fourth column does not cost rerunning three.
+            by_id = {r["id"]: r for r in agents["rows"]}
+            for r in fresh["rows"]:
+                by_id.setdefault(r["id"], {"id": r["id"]}).update({k: v for k, v in r.items() if k != "id"})
+            agents["rows"] = list(by_id.values())
+            agents["summary"].update(fresh["summary"])
+        else:
+            agents = fresh
     RESULTS.write_text(json.dumps({"solver": solver, "agents": agents}, indent=1) + "\n")
     body = render(solver, agents)
     print("\n" + body)

@@ -281,8 +281,12 @@ class DemoService:
             "claims": p.claims, "missing_facts": p.missing_facts, "untranslated": p.untranslated,
             "policy_version": p.policy_version, "guardrail_version": p.guardrail_version,
             "latency_ms": p.latency_ms, "text_units": p.text_units, "attempt": p.attempt,
-            "meal_id": p.meal_id, "ledger": p.ledger,
+            "meal_id": p.meal_id, "ledger": p.ledger, "stakes": self.stakes(p),
         }
+
+    def stakes(self, p) -> dict | None:
+        return stakes_for(self.rt, p)
+
 
     def month(self) -> dict:
         r = self.rt
@@ -327,6 +331,29 @@ class DemoService:
 
     def trace(self, since: int = 0) -> dict:
         return {"events": self.rt.trace[since:], "next": len(self.rt.trace)}
+
+
+def stakes_for(rt, p) -> dict | None:
+    """What following a contradicted answer would cost this home in a month, from the claim engine.
+
+    A disallowed meal is the whole meal, not the one food: the snack with the wrong yogurt is not
+    paid at all. So the figure is the meal's rate, for every child on the roster, for a month of
+    serving days, at this provider's tier. Same arithmetic and same rates as the claim.
+    """
+    if p.verdict not in ("INVALID", "IMPOSSIBLE"):
+        return None
+    from tally.engine.claim import lost_value, rate_for
+
+    text = f"{p.question} {p.facts}".lower()
+    meal = next((m for m in (MealType.BREAKFAST, MealType.LUNCH, MealType.SUPPER, MealType.SNACK)
+                 if m.value in text), None)
+    if meal is None:
+        return None
+    prov = rt.store.get_provider()
+    children = len(rt.store.list_children())
+    days = 22
+    return {"meal": meal.value, "children": children, "serving_days": days, "tier": prov.tier,
+            "rate": rate_for(meal, prov.tier), "month": lost_value([(meal, children * days)], prov.tier)}
 
 
 class _Lazy:

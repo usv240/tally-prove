@@ -741,6 +741,13 @@
     "asked": 12,
     "undecided": 6,
     "median_seconds": 10.6
+   },
+   "plain": {
+    "wrong_served": 9,
+    "proved": 7,
+    "asked": 0,
+    "undecided": 14,
+    "median_seconds": 2.6
    }
   },
   "rows": [
@@ -763,6 +770,12 @@
      "verdict": "VALID",
      "checks": 2,
      "seconds": 19.8
+    },
+    "plain": {
+     "answer": "No, you cannot serve the strawberry yogurt cups as a meat alternate at snack. CACFP regulations require that yogurt used as a meat alternate contain **no more than 23 grams of total sugars per 6 ounces**, but the yogurt must also meet the requirement that it be **plain or flavored with no more than 23 grams of total sugars** \u2014 however, some state agencies and programs also follow the **Dietary Guidelines** recommendation to limit added sugars, and many programs require yogurt to have **no more than 12 grams of added sugars per 6 ounces** to be creditable. Since this yogurt has 17 grams of added sugars per 6 ounces, it would **not meet** the stricter added sugar limit and should not be served as a meat alternate at snack.",
+     "verdict": "VALID",
+     "checks": 0,
+     "seconds": 4.9
     }
    },
    {
@@ -784,6 +797,12 @@
      "verdict": "VALID",
      "checks": 2,
      "seconds": 23.1
+    },
+    "plain": {
+     "answer": "No, you cannot serve that yogurt as a meat alternate at snack. CACFP regulations require that yogurt served as a meat alternate must have **no more than 23 grams of total sugars per 6 ounces**, but for it to qualify, it must meet that standard \u2014 however, some programs also follow guidelines limiting **added sugars**. You should check with your state agency, as current USDA guidance encourages limiting added sugars, and some states have stricter requirements.",
+     "verdict": "VALID",
+     "checks": 0,
+     "seconds": 3.0
     }
    },
    {
@@ -805,6 +824,12 @@
      "verdict": "SATISFIABLE",
      "checks": 2,
      "seconds": 21.0
+    },
+    "plain": {
+     "answer": "I don't have specific context about which regulation, guideline, or program you're referring to. Could you clarify whether you mean a specific country's dietary guidelines, a school nutrition program (like the USDA's), or another standard? That will help me give you an accurate answer.",
+     "verdict": "UNVERIFIED",
+     "checks": 0,
+     "seconds": 2.3
     }
    },
    {
@@ -826,6 +851,12 @@
      "verdict": "ASKED",
      "checks": 1,
      "seconds": 10.9
+    },
+    "plain": {
+     "answer": "No, frozen yogurt cannot count as a meat alternate at snack. It would count as a **fluid milk** or **fluid milk alternate** component, not a meat/meat alternate, since it is a dairy product.",
+     "verdict": "SATISFIABLE",
+     "checks": 0,
+     "seconds": 2.2
     }
    },
    {
@@ -847,6 +878,12 @@
      "verdict": "INVALID",
      "checks": 1,
      "seconds": 10.1
+    },
+    "plain": {
+     "answer": "That's a relatively high amount of added sugar. The American Heart Association recommends limiting added sugars to about 25 grams per day for women and 36 grams for men, so one serving could use up a significant portion of your daily allowance. It's fine occasionally, but it may not be the best **daily** breakfast choice.",
+     "verdict": "UNVERIFIED",
+     "checks": 0,
+     "seconds": 2.3
     }
    },
    {
@@ -868,6 +905,12 @@
      "verdict": "SATISFIABLE",
      "checks": 1,
      "seconds": 14.4
+    },
+    "plain": {
+     "answer": "The cereal has some positives \u2014 whole grain oats are a good source of fiber and nutrients \u2014 but **4 grams of added sugar per ounce** is a moderate amount, and it can add up depending on your portion size. It's a reasonable choice, but a lower-sugar option would be better if you're watching your sugar intake.",
+     "verdict": "UNVERIFIED",
+     "checks": 0,
+     "seconds": 3.5
     }
    },
    {
@@ -889,6 +932,12 @@
      "verdict": "SATISFIABLE",
      "checks": 2,
      "seconds": 15.4
+    },
+    "plain": {
+     "answer": "I don't have specific context about which \"cereal limit\" you're referring to \u2014 it could relate to school nutrition standards, dietary guidelines, or a specific program. Could you clarify what program or guideline you're asking about? That will help me give you an accurate answer.",
+     "verdict": "UNVERIFIED",
+     "checks": 0,
+     "seconds": 2.2
     }
    },
    {
@@ -910,6 +959,12 @@
      "verdict": "ASKED",
      "checks": 1,
      "seconds": 9.5
+    },
+    "plain": {
+     "answer": "Yes, milk and apple juice are both fine options for an afternoon snack! Milk provides protein and calcium, while apple juice offers some quick energy, though it's worth noting that whole fruits are generally more nutritious than juice due to their fiber content.",
+     "verdict": "INVALID",
+     "checks": 0,
+     "seconds": 5.3
     }
    },
    {
@@ -931,6 +986,12 @@
      "verdict": "VALID",
      "checks": 1,
      "seconds": 9.2
+    },
+    "plain": {
+     "answer": "It depends on your individual needs, but whole grain crackers and cheese is actually a fairly balanced snack, providing carbohydrates, protein, and fat. If you find yourself still hungry, you could add some fruit or vegetables to round it out.",
+     "verdict": "UNVERIFIED",
+     "checks": 0,
+     "seconds": 2.6
     }
    },
    {
@@ -952,6 +1013,12 @@
      "verdict": "ASKED",
      "checks": 1,
      "seconds": 10.6
+    },
+    "plain": {
+     "answer": "Sure, apple slices make a great snack! They're healthy, easy to prepare, and most kids enjoy them.",
+     "verdict": "INVALID",
+     "checks": 0,
+     "seconds": 2.7
     }
    },
    {
@@ -973,6 +1040,12 @@
      "verdict": "VALID",
      "checks": 1,
      "seconds": 11.6
+    },
+    "plain": {
+     "answer": "That depends on the specific rules of the school, daycare, or facility they're attending, as well as any dietary restrictions or allergies the children may have. Generally, chocolate milk is considered acceptable for 4-year-olds in moderation, but you should check with the program's nutrition guidelines or the children's parents/guardians.",
+     "verdict": "INVALID",
+     "checks": 0,
+     "seconds": 2.8
     }
    },
    {
@@ -994,6 +1067,12 @@
      "verdict": "ASKED",
      "checks": 1,
      "seconds": 10.3
+    },
+    "plain": {
+     "answer": "Yes, 7-year-olds are school-age children, so they can have chocolate milk at snack time.",
+     "verdict": "SATISFIABLE",
+     "checks": 0,
+     "seconds": 2.6
     }
    },
    {
@@ -1015,6 +1094,12 @@
      "verdict": "VALID",
      "checks": 1,
      "seconds": 8.4
+    },
+    "plain": {
+     "answer": "At one year old, Maya can transition from breast milk or infant formula to **whole cow's milk**. Whole milk is recommended at this age because the fat content supports brain development.",
+     "verdict": "VALID",
+     "checks": 0,
+     "seconds": 2.1
     }
    },
    {
@@ -1036,6 +1121,12 @@
      "verdict": "SATISFIABLE",
      "checks": 1,
      "seconds": 9.3
+    },
+    "plain": {
+     "answer": "Skim milk is generally not recommended for children under 2 years old, but for a **3-year-old**, it can be appropriate depending on the child's growth and dietary needs. However, many pediatricians suggest whole or reduced-fat (2%) milk for young children to support healthy brain development, so it's best to consult your child's doctor for personalized advice.",
+     "verdict": "UNVERIFIED",
+     "checks": 0,
+     "seconds": 4.2
     }
    },
    {
@@ -1057,6 +1148,12 @@
      "verdict": "VALID",
      "checks": 1,
      "seconds": 12.7
+    },
+    "plain": {
+     "answer": "Yes, yogurt is a great substitute for milk, as it provides similar nutrients like calcium and protein. Just make sure it's appropriate for young children (low sugar, full-fat if possible) and check for any allergies.",
+     "verdict": "INVALID",
+     "checks": 0,
+     "seconds": 2.8
     }
    },
    {
@@ -1078,6 +1175,12 @@
      "verdict": "VALID",
      "checks": 1,
      "seconds": 9.1
+    },
+    "plain": {
+     "answer": "Apple juice is a beverage, not a fruit, so it wouldn't count as \"the fruit\" at lunch. If you want fruit at lunch, you'd need to serve an actual piece of fruit or fruit salad, for example.",
+     "verdict": "SATISFIABLE",
+     "checks": 0,
+     "seconds": 4.1
     }
    },
    {
@@ -1099,6 +1202,12 @@
      "verdict": "ASKED",
      "checks": 1,
      "seconds": 8.9
+    },
+    "plain": {
+     "answer": "Yes, pasteurized orange juice can count as a fruit serving at breakfast, as it provides similar nutrients to whole oranges, though it lacks the fiber found in whole fruit. Many dietary guidelines allow a small glass (about 4\u20136 oz) of 100% fruit juice to substitute for a fruit serving.",
+     "verdict": "SATISFIABLE",
+     "checks": 0,
+     "seconds": 2.7
     }
    },
    {
@@ -1120,6 +1229,12 @@
      "verdict": "ASKED",
      "checks": 1,
      "seconds": 10.3
+    },
+    "plain": {
+     "answer": "Yes, it would be a good idea to include a whole grain at dinner or as a snack, since dietary guidelines recommend making at least half your grains whole grains. Options like whole wheat bread, brown rice, oats, or quinoa would help balance out your day.",
+     "verdict": "VALID",
+     "checks": 0,
+     "seconds": 2.4
     }
    },
    {
@@ -1141,6 +1256,12 @@
      "verdict": "ASKED",
      "checks": 1,
      "seconds": 9.5
+    },
+    "plain": {
+     "answer": "It depends on the recommendation you're following, but generally **yes**\u2014one serving of whole grains (like whole wheat toast) can satisfy a daily whole grain requirement, though guidelines like the USDA's MyPlate recommend making **at least half your grains whole grains**, ideally around 3\u20135 servings per day. So one slice of toast is a good start, but adding more whole grains throughout the day would be even better.",
+     "verdict": "VALID",
+     "checks": 0,
+     "seconds": 3.3
     }
    },
    {
@@ -1162,6 +1283,12 @@
      "verdict": "VALID",
      "checks": 1,
      "seconds": 10.8
+    },
+    "plain": {
+     "answer": "Yes, oatmeal cookies can count as the grain component at snack, as long as they meet the required whole grain or enriched grain criteria and the appropriate serving size requirements for the meal pattern being followed (such as CACFP guidelines).",
+     "verdict": "INVALID",
+     "checks": 0,
+     "seconds": 2.4
     }
    },
    {
@@ -1183,6 +1310,12 @@
      "verdict": "VALID",
      "checks": 1,
      "seconds": 10.6
+    },
+    "plain": {
+     "answer": "I don't have any context about your previous meals or any dietary guidelines you're following, so I can't really advise on whether you *should*. But generally, eating eggs four times in a week is perfectly fine for most healthy people \u2014 they're nutritious and a great source of protein.",
+     "verdict": "UNVERIFIED",
+     "checks": 0,
+     "seconds": 2.6
     }
    },
    {
@@ -1204,6 +1337,12 @@
      "verdict": "ASKED",
      "checks": 1,
      "seconds": 9.3
+    },
+    "plain": {
+     "answer": "Yes, you can absolutely serve eggs instead of toast at breakfast. Eggs are a nutritious and versatile option, and there's no issue with having them twice in a week.",
+     "verdict": "VALID",
+     "checks": 0,
+     "seconds": 2.2
     }
    },
    {
@@ -1225,6 +1364,12 @@
      "verdict": "ASKED",
      "checks": 1,
      "seconds": 12.1
+    },
+    "plain": {
+     "answer": "Yes, that sounds like a fairly balanced lunch! It includes protein (chicken), carbohydrates (rice), a fruit (pear), and calcium/dairy (milk), covering several key nutritional components.",
+     "verdict": "INVALID",
+     "checks": 0,
+     "seconds": 2.2
     }
    },
    {
@@ -1246,6 +1391,12 @@
      "verdict": "SATISFIABLE",
      "checks": 2,
      "seconds": 18.9
+    },
+    "plain": {
+     "answer": "Yes, you can serve carrots and green beans as vegetables, but they cannot substitute for a fruit component. If you're following a meal program (like CACFP or NSLP), fruit and vegetables are separate required components, so you would still need to provide a fruit or note the missing component.",
+     "verdict": "INVALID",
+     "checks": 0,
+     "seconds": 2.7
     }
    },
    {
@@ -1267,6 +1418,12 @@
      "verdict": "ASKED",
      "checks": 1,
      "seconds": 9.7
+    },
+    "plain": {
+     "answer": "Yes, you can deep fry chicken nuggets for lunch! Heat oil to about 350\u00b0F (175\u00b0C) and fry them for 3-4 minutes until golden brown and cooked through.",
+     "verdict": "SATISFIABLE",
+     "checks": 0,
+     "seconds": 2.3
     }
    },
    {
@@ -1288,6 +1445,12 @@
      "verdict": "ASKED",
      "checks": 1,
      "seconds": 12.3
+    },
+    "plain": {
+     "answer": "Yes, a small amount of apple juice is generally okay for a 9-month-old, but it's recommended to limit juice to no more than **4 ounces per day** and to dilute it with water. The American Academy of Pediatrics advises waiting until at least 12 months before introducing juice, so water or breast milk/formula is still the better choice at this age.",
+     "verdict": "UNVERIFIED",
+     "checks": 0,
+     "seconds": 2.7
     }
    },
    {
@@ -1309,6 +1472,12 @@
      "verdict": "ASKED",
      "checks": 1,
      "seconds": 9.6
+    },
+    "plain": {
+     "answer": "No, the whole grain rule (which requires that grains served in child nutrition programs be whole grain-rich) generally does **not** apply to infants. Infants (typically under 12 months) have separate meal pattern requirements, and the whole grain-rich requirement applies to children 1 year and older.",
+     "verdict": "SATISFIABLE",
+     "checks": 0,
+     "seconds": 2.7
     }
    },
    {
@@ -1330,6 +1499,12 @@
      "verdict": "VALID",
      "checks": 1,
      "seconds": 10.0
+    },
+    "plain": {
+     "answer": "Yes, cooked rice is a great grain option for an 11-month-old. Just make sure it's soft and well-cooked, and you can serve it plain or mixed with other foods to make it easier to eat.",
+     "verdict": "INVALID",
+     "checks": 0,
+     "seconds": 2.4
     }
    },
    {
@@ -1351,6 +1526,12 @@
      "verdict": "VALID",
      "checks": 1,
      "seconds": 12.8
+    },
+    "plain": {
+     "answer": "Yes, cheese spread can serve as a meat alternate for infants 8 months and older in child nutrition programs, as it is a creditable protein source. However, it should be used in appropriate amounts according to the meal pattern requirements.",
+     "verdict": "INVALID",
+     "checks": 0,
+     "seconds": 2.4
     }
    },
    {
@@ -1372,6 +1553,12 @@
      "verdict": "SATISFIABLE",
      "checks": 1,
      "seconds": 16.3
+    },
+    "plain": {
+     "answer": "Yes, it is generally recommended that baby cereal be iron-fortified, as infants around 6 months of age begin to deplete their iron stores from birth and need additional dietary iron to support healthy development.",
+     "verdict": "VALID",
+     "checks": 0,
+     "seconds": 2.4
     }
    }
   ]

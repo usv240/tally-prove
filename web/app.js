@@ -463,6 +463,18 @@
         window.h("span", { text: p.rules[0] })
       ]));
     }
+    if (bad && p.stakes) {
+      // The number a provider repeats: what following this answer would have cost this month,
+      // from the same claim engine and rates that compute the month's claim.
+      var s = p.stakes;
+      card.appendChild(window.h("p", { class: "stakes" }, [
+        window.h("span", { class: "money lost", text: "$" + s.month.toFixed(2) }),
+        window.h("span", { class: "small muted", text: " not paid this month, had she followed it: one "
+          + s.meal + " a day for " + s.children + " children over " + s.serving_days
+          + " serving days at the " + s.tier.replace("_", " ") + " rate of $" + s.rate.toFixed(2) + "." }),
+        window.infoBtn("lost_amount", "the lost amount")
+      ]));
+    }
     if (open && p.missing_facts && p.missing_facts.length) {
       card.appendChild(window.h("blockquote", { class: "rule missing" }, [
         window.h("strong", { text: "What would settle it" }),

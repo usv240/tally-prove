@@ -99,6 +99,20 @@ def test_receipt_attaches_to_a_meal(rt, monkeypatch):
     assert rt.store.list_proofs(meal_id="seed-001")[0].verdict == "VALID"
 
 
+def test_a_contradicted_answer_carries_what_it_would_cost(rt, monkeypatch):
+    monkeypatch.setenv("TALLY_PROVE", "on")
+    monkeypatch.setattr(prove, "prove", fake("INVALID", rules=["r"]))
+    from tally.service import stakes_for
+
+    prove_answer(Q, "Yes, 17 g is under the 23 g limit.", "The meal is a snack.")
+    s = stakes_for(rt, rt.store.list_proofs()[0])
+    assert s["meal"] == "snack" and s["children"] == 9
+    assert s["month"] == 194.04 and s["rate"] == 0.98
+    monkeypatch.setattr(prove, "prove", fake("VALID", rules=["r"]))
+    prove_answer("Q2?", "Yes.", "The meal is lunch.")
+    assert stakes_for(rt, rt.store.list_proofs()[1]) is None
+
+
 def test_api_prove_endpoint(monkeypatch):
     monkeypatch.setenv("TALLY_PROVE", "on")
     monkeypatch.setattr(prove, "prove", fake("INVALID", rules=["Yogurt must contain no more than 12 g"]))
