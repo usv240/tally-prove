@@ -108,7 +108,9 @@ shapes.
 ### One new tool, October 2026: `prove_answer`
 
 Built for the AWS Builder Center weekend challenge *Give your Agent a Tool*. Everything above is the
-agent as it shipped in September. What it could not do: answer a provider's question about the rules.
+agent as it shipped in September; that version is untouched at
+[github.com/usv240/tally](https://github.com/usv240/tally), and this repository carries its full
+history plus the commits that added the tool, so the before and after are both in `git log`. What it could not do: answer a provider's question about the rules.
 Ask it whether a 17 g yogurt counts at snack and the model answered from memory, and memory is where
 last year's rule lives. We found out by pointing the new tool at Tally's own rulebook: the yogurt
 sugar limit in `rules/cacfp_rules.json` expired on 1 October 2025.
@@ -238,7 +240,7 @@ is owed and never claims.
 Needs Python 3.12 and AWS credentials with Amazon Bedrock access in `us-east-1`.
 
 ```bash
-git clone https://github.com/usv240/tally && cd tally
+git clone https://github.com/usv240/tally-prove && cd tally-prove
 uv venv && uv pip install -e ".[dev]"
 python -m tally.data.fetch_plates    # openly licensed photographs from Wikimedia Commons
 python -m tally.data.make_plates     # the two composed "after the fix" images
