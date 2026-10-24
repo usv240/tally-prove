@@ -277,7 +277,7 @@ python -m tally.agentcore.provision --list   # shows what exists
 Everything below runs in GitHub Actions on every push. See `.github/workflows/ci.yml`.
 
 ```bash
-pytest -q                         # 146 tests, no model calls, under five seconds
+pytest -q                         # 186 tests, no model calls, under fifteen seconds
 ruff check src tests tools        # lint
 python tools/check_copy.py        # house style: no emoji, no em or en dashes, anywhere
 
@@ -380,8 +380,10 @@ flags.
 - **Speech is text in this build.** The roll call is typed rather than spoken. The parser and the spoken
   responses are real. A microphone and Amazon Transcribe would sit in front of the same function, and
   Amazon Polly behind `runtime.say`.
-- **Infant meal patterns are not modelled.** Infants follow a separate pattern by age in months, so
-  Tally records their meals and explicitly declines to judge them rather than applying the wrong rule.
+- **Infant plates are not judged.** Infants follow a separate pattern by age in months, so the plate
+  engine records their meals and explicitly declines to judge them rather than applying the wrong
+  rule. Since October the rulebook behind `prove_answer` does hold the infant rules, so a question
+  about an infant's meal can be proved even though a photograph of it is not scored.
 - **Only Texas is in the ratio table.** Adding a state means adding its table to
   `rules/state_rules.json`. An unknown state raises rather than guessing, because a wrong ratio limit is
   worse than no answer.
