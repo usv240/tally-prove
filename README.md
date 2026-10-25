@@ -1,5 +1,14 @@
 # Tally
 
+> **Give your Agent a Tool, October 2026: `prove_answer`.** The model drafts. The regulation decides.
+> Tally's answers to a provider's food-program questions are now proved against 7 CFR 226.20 with
+> Amazon Bedrock Automated Reasoning checks before she hears them. Wrong answers served on 30
+> USDA-answered questions: 3 of 30 before, **1 of 30** after, 0 correct answers wrongly blocked; it
+> found a rule in its own rulebook that expired a year ago. **Exactly what changed since September:**
+> [github.com/usv240/tally-prove/compare/6a78b71...main](https://github.com/usv240/tally-prove/compare/6a78b71...main).
+> The tool, the verdicts and the twenty lines to reuse it: [one new tool](#one-new-tool-october-2026-prove_answer).
+> Try it on your own agent's answer: <https://dtvxrkiam6.us-east-1.awsapprunner.com/prove.html>.
+
 **A hands free agent for home child care providers.** Photograph the plate, say who is here, and the
 meal record, the attendance, the ratio check, the notes home and the monthly claim are done,
 correctly, before the food is cold.

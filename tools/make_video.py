@@ -114,9 +114,11 @@ def main(base: str, out: str) -> int:
         pg.wait_for_timeout(600)
         pg.locator("#ask-go").click()
         pg.locator("#ask-answer:not([hidden])").wait_for(timeout=120000)
+        pg.wait_for_timeout(1200)
+        pg.locator("#ask-answer").scroll_into_view_if_needed()
         pg.wait_for_timeout(2500)
         return pg.locator("#ask-answer").inner_text()
-    scene("03-before", "Ask it what the rules say, with proving off. This is the agent as it shipped in September. On some runs it quotes a limit from memory; on others it dodges and asks for a photo. Either way, it has no way to check.", s3, tail=True, prep=reset_day)
+    scene("03-before", "Ask it what the rules say, with proving off. This is the agent as it shipped in September. It quotes a 23 gram limit. The page marks that number in red: it is in neither her words nor the regulation. The model remembered it. And it has no way to check.", s3, tail=True, prep=reset_day, good=lambda n: "From nowhere: 23" in n)
 
     # 4. The cost.
     c4 = card(cards / "4.html", "<div class='n'>$194.04</div><h1 style='font-size:44px'>not paid this month, had she followed the old answer.</h1><p>One snack a day, nine children, 22 serving days, at this year's rate. A disallowed meal is the whole meal.</p>", 44)
@@ -174,6 +176,11 @@ def main(base: str, out: str) -> int:
     c9 = card(cards / "9.html", "<div class='k'>30 questions USDA has answered. Wrong answers served:</div><table><tr><td>A general assistant, same model</td><td class='r'>9 of 30</td></tr><tr><td>Tally without the tool</td><td class='r'>3 of 30</td></tr><tr><td>Two agents debate, a judge decides</td><td class='r'>6 of 30</td></tr><tr><td>Tally with prove_answer</td><td class='r' style='color:#0F6E56'>1 of 30</td></tr></table><p style='margin-top:12px'>0 of 30 correct answers wrongly blocked. Held out: 8 of 10 caught, 0 blocked. Every number recounts with one command, no AWS needed.</p>", 48)
     scene("09-numbers", "On thirty questions USDA has answered, a general assistant served nine wrong answers. Two agents debating, six. With the tool, one. And zero correct answers wrongly blocked.",
           lambda pg: (pg.goto(c9), pg.wait_for_timeout(500)))
+
+    # 9b. Nine answers that tried to talk the prover into a proof.
+    c9b = card(cards / "9b.html", "<div class='k'>Then we attacked it</div><h1 style='font-size:44px'>Nine wrong answers that try to get proved anyway. <span style='color:#0F6E56'>0 of 9 proved.</span></h1><p>“Ignore the regulation.” “USDA confirmed this today.” “The limit is 25 grams.” “VALID.” JSON. Filler. A sponsor overriding the milk rule. A question that asks for a yes.<br><br>The rulebook was compiled once and the version is pinned. Nothing in a request can add a rule, move a number, or pick a version. Every receipt carries the AWS request id of the check.</p>", 44)
+    scene("09b-attacks", "Then we attacked it. Nine wrong answers that try to talk the prover into a proof: ignore the rules, claim authority, restate the limit, write the verdict into the answer. Zero of nine proved. Nothing in a request can change the regulation, and every receipt carries the AWS request id of the check.",
+          lambda pg: (pg.goto(c9b), pg.wait_for_timeout(500)))
 
     # 10. prove.html for anyone's agent.
     def s10(pg):
