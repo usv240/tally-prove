@@ -17,6 +17,7 @@ import shutil
 import subprocess
 import sys
 import time
+import urllib.request
 from pathlib import Path
 
 import boto3
@@ -62,15 +63,34 @@ def main(base: str, out: str) -> int:
     (outdir / "raw").mkdir(parents=True)
     cards = outdir / "cards"
     cards.mkdir()
-    fonts = (Path(__file__).resolve().parent.parent / "web" / "fonts").as_uri()
 
     scenes: list[dict] = []
 
-    def scene(name: str, say: str, run, min_hold: float = 0.0, tail: bool = False, good=None):
+    def post(path: str, body: dict | None = None) -> None:
+        req = urllib.request.Request(f"{base}{path}", data=json.dumps(body or {}).encode(), method="POST",
+                                     headers={"content-type": "application/json"})
+        with urllib.request.urlopen(req, timeout=300) as r:
+            r.read()
+
+    def reset_day(take: int) -> None:
+        """A fresh day and a fresh conversation, so a retake does not inherit the last take's proofs."""
+        post("/api/reset")
+        for step in ("roll", "breakfast"):
+            post("/api/step", {"step": step})
+
+    def rebuild_for_follow(take: int) -> None:
+        """Scene 6 answers the question scene 5 asked. A retake of 6 alone has to ask it again first."""
+        if take > 1:
+            reset_day(take)
+            post("/api/ask", {"text": Q, "prove": True})
+
+    def scene(name: str, say: str, run, min_hold: float = 0.0, tail: bool = False, good=None, prep=None):
         """tail=True keeps the END of the recording: live scenes wait on the agent, and the viewer
         should see the result arrive, not the whole wait. `good(note)` says whether a take is usable;
-        the live agent is not deterministic, so a bad take is re-recorded, up to five times."""
-        scenes.append({"name": name, "say": say, "run": run, "min_hold": min_hold, "tail": tail, "good": good})
+        the live agent is not deterministic, so a bad take is re-recorded, up to five times. `prep(take)`
+        runs before the camera starts, to put the server in the state the scene assumes."""
+        scenes.append({"name": name, "say": say, "run": run, "min_hold": min_hold, "tail": tail, "good": good,
+                       "prep": prep})
 
     # 1. The opener, as a card in our own type.
     c1 = card(cards / "1.html", "<div class='k'>2024</div><h1>A city's official chatbot told landlords they could refuse housing vouchers.</h1><p>It was wrong. It stayed online for nearly two years.</p>")
@@ -96,7 +116,7 @@ def main(base: str, out: str) -> int:
         pg.locator("#ask-answer:not([hidden])").wait_for(timeout=120000)
         pg.wait_for_timeout(2500)
         return pg.locator("#ask-answer").inner_text()
-    scene("03-before", "Ask it what the rules say, with proving off. This is the agent as it shipped in September. On some runs it quotes a limit from memory; on others it dodges and asks for a photo. Either way, it has no way to check.", s3, tail=True, good=lambda n: "23" in n)
+    scene("03-before", "Ask it what the rules say, with proving off. This is the agent as it shipped in September. On some runs it quotes a limit from memory; on others it dodges and asks for a photo. Either way, it has no way to check.", s3, tail=True, prep=reset_day)
 
     # 4. The cost.
     c4 = card(cards / "4.html", "<div class='n'>$194.04</div><h1 style='font-size:44px'>not paid this month, had she followed the old answer.</h1><p>One snack a day, nine children, 22 serving days, at this year's rate. A disallowed meal is the whole meal.</p>", 44)
@@ -111,13 +131,17 @@ def main(base: str, out: str) -> int:
         if not pg.locator("#ask-prove").is_checked():
             pg.locator("#ask-prove").check()
         pg.wait_for_timeout(600)
+        start = pg.locator(".proof").count()
         pg.locator("#ask-go").click()
-        pg.locator(".proof").first.wait_for(timeout=180000)
+        pg.wait_for_function(f"document.querySelectorAll('.proof').length > {start}", timeout=180000)
         pg.wait_for_timeout(1500)
-        pg.locator(".proof").first.scroll_into_view_if_needed()
+        new = pg.locator(".proof").count() - start
+        cards = [pg.locator(".proof").nth(i).inner_text() for i in range(new)]
+        hit = pg.locator(".proof").filter(has_text="CONTRADICTS")
+        (hit.first if hit.count() else pg.locator(".proof").first).scroll_into_view_if_needed()
         pg.wait_for_timeout(4000)
-        return pg.locator("#ask-answer").inner_text()
-    scene("05-after", "Same agent, same question, one new tool. Its draft goes to Amazon Bedrock Automated Reasoning, which holds the regulation as formal logic. Not an opinion. A proof. The rule it broke, by name, and the cost beneath it. Then it asks the one fact the rule turns on.", s5, tail=True)
+        return " // ".join(cards) + " || " + pg.locator("#ask-answer").inner_text()
+    scene("05-after", "Same agent, same question, one new tool. Its draft goes to Amazon Bedrock Automated Reasoning, which holds the regulation as formal logic. Not an opinion. A proof. The rule it broke, by name, and the cost beneath it. Then it asks the one fact the rule turns on.", s5, tail=True, prep=reset_day, good=lambda n: "CONTRADICTS" in n and ("12 grams" in n or "added sugars, not total" in n))
 
     # 6. She answers; proved.
     def s6(pg):
@@ -130,8 +154,8 @@ def main(base: str, out: str) -> int:
         pg.wait_for_timeout(1500)
         pg.locator(".proof").first.scroll_into_view_if_needed()
         pg.wait_for_timeout(3000)
-        return pg.locator("#ask-answer").inner_text()
-    scene("06-proved", "Nine grams added. Proved, with the rule it rests on, and the receipt filed in Amazon S3 where nobody can edit it for three years.", s6, tail=True, good=lambda n: "23" not in n)
+        return pg.locator(".proof").first.inner_text() + " || " + pg.locator("#ask-answer").inner_text()
+    scene("06-proved", "Nine grams added. Proved, with the rule it rests on, and the receipt filed in Amazon S3 where nobody can edit it for three years.", s6, tail=True, prep=rebuild_for_follow, good=lambda n: "PROVED" in n and "23" not in n.split("||")[-1])
 
     # 7. The sponsor's month.
     def s7(pg):
@@ -157,7 +181,10 @@ def main(base: str, out: str) -> int:
         pg.wait_for_timeout(1200)
         pg.locator("#go").click()
         pg.locator("#out:not([hidden])").wait_for(timeout=90000)
-        pg.wait_for_timeout(3500)
+        pg.wait_for_timeout(1200)
+        pg.locator("#out").scroll_into_view_if_needed()
+        pg.mouse.wheel(0, 260)
+        pg.wait_for_timeout(3000)
         return pg.locator("#out").inner_text()
     scene("10-prove", "The same tool is a public page, an MCP tool, a Lambda URL, and one line in any Strands agent. Paste your agent's answer; the proof comes back in six seconds.", s10, tail=True, good=lambda n: "Contradicts" in n)
 
@@ -176,6 +203,8 @@ def main(base: str, out: str) -> int:
         b = p.chromium.launch()
         for s in scenes:
             for take in range(1, 6):
+                if s["prep"]:
+                    s["prep"](take)
                 ctx = b.new_context(viewport={"width": W, "height": H}, record_video_dir=str(outdir / "raw"),
                                     record_video_size={"width": W, "height": H})
                 ctx.add_init_script("try{localStorage.setItem('tally-theme','light')}catch(e){}")
@@ -194,7 +223,8 @@ def main(base: str, out: str) -> int:
                 if s["video"].exists():
                     s["video"].unlink()
                 src.rename(s["video"])
-                s["note"] = str(note)[:160].replace(chr(10), " ") if isinstance(note, str) else ""
+                s["note"] = (str(note)[:6000].replace(chr(10), " ").encode("ascii", "replace").decode()
+                             if isinstance(note, str) else "")
                 ok = s["good"] is None or s["good"](s["note"])
                 print(f"  {s['name']:<12} take {take} {time.time() - t0:5.1f}s  {'ok ' if ok else 'BAD'} {s['note'][:60]}")
                 if ok:
@@ -222,7 +252,7 @@ def main(base: str, out: str) -> int:
     subprocess.run(["ffmpeg", "-y", "-v", "error", "-f", "concat", "-safe", "0", "-i", str(lst), "-c", "copy", str(final)], check=True)
     total = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(final)],
                                  capture_output=True, text=True, check=True).stdout.strip())
-    (outdir / "scenes.json").write_text(json.dumps([{k: v for k, v in s.items() if k not in ("run",)} for s in scenes], default=str, indent=1))
+    (outdir / "scenes.json").write_text(json.dumps([{k: v for k, v in s.items() if k not in ("run", "good", "prep")} for s in scenes], default=str, indent=1))
     print(f"\n{final}  {total:.1f} s  ({'OK, under 3 minutes' if total < 180 else 'TOO LONG, cut a scene'})")
     return 0
 
