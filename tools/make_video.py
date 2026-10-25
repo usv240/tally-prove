@@ -66,10 +66,11 @@ def main(base: str, out: str) -> int:
 
     scenes: list[dict] = []
 
-    def scene(name: str, say: str, run, min_hold: float = 0.0, tail: bool = False):
+    def scene(name: str, say: str, run, min_hold: float = 0.0, tail: bool = False, good=None):
         """tail=True keeps the END of the recording: live scenes wait on the agent, and the viewer
-        should see the result arrive, not the whole wait."""
-        scenes.append({"name": name, "say": say, "run": run, "min_hold": min_hold, "tail": tail})
+        should see the result arrive, not the whole wait. `good(note)` says whether a take is usable;
+        the live agent is not deterministic, so a bad take is re-recorded, up to three times."""
+        scenes.append({"name": name, "say": say, "run": run, "min_hold": min_hold, "tail": tail, "good": good})
 
     # 1. The opener, as a card in our own type.
     c1 = card(cards / "1.html", "<div class='k'>2024</div><h1>A city's official chatbot told landlords they could refuse housing vouchers.</h1><p>It was wrong. It stayed online for nearly two years.</p>")
@@ -95,7 +96,7 @@ def main(base: str, out: str) -> int:
         pg.locator("#ask-answer:not([hidden])").wait_for(timeout=120000)
         pg.wait_for_timeout(2500)
         return pg.locator("#ask-answer").inner_text()
-    scene("03-before", "Ask it what the rules say. Proving off: this is the agent as it shipped in September. Confident, from memory, with no way to check itself.", s3, tail=True)
+    scene("03-before", "Ask it what the rules say. Proving off: this is the agent as it shipped in September. Confident, from memory, with no way to check itself.", s3, tail=True, good=lambda n: "23" in n)
 
     # 4. The cost.
     c4 = card(cards / "4.html", "<div class='n'>$194.04</div><h1 style='font-size:44px'>not paid this month, had she followed the old answer.</h1><p>One snack a day, nine children, 22 serving days, at this year's rate. A disallowed meal is the whole meal.</p>", 44)
@@ -130,7 +131,7 @@ def main(base: str, out: str) -> int:
         pg.locator(".proof").first.scroll_into_view_if_needed()
         pg.wait_for_timeout(3000)
         return pg.locator("#ask-answer").inner_text()
-    scene("06-proved", "Nine grams added. Proved, with the rule it rests on, and the receipt filed in Amazon S3 where nobody can edit it for three years.", s6, tail=True)
+    scene("06-proved", "Nine grams added. Proved, with the rule it rests on, and the receipt filed in Amazon S3 where nobody can edit it for three years.", s6, tail=True, good=lambda n: "23" not in n)
 
     # 7. The sponsor's month.
     def s7(pg):
@@ -157,7 +158,8 @@ def main(base: str, out: str) -> int:
         pg.locator("#go").click()
         pg.locator("#out:not([hidden])").wait_for(timeout=90000)
         pg.wait_for_timeout(3500)
-    scene("10-prove", "The same tool is a public page, an MCP tool, a Lambda URL, and one line in any Strands agent. Paste your agent's answer; the proof comes back in six seconds.", s10, tail=True)
+        return pg.locator("#out").inner_text()
+    scene("10-prove", "The same tool is a public page, an MCP tool, a Lambda URL, and one line in any Strands agent. Paste your agent's answer; the proof comes back in six seconds.", s10, tail=True, good=lambda n: "Contradicts" in n)
 
     # 11. Close.
     c11 = card(cards / "11.html", "<h1>The model drafts.<br>The regulation decides.</h1><p>Tally, now with proof. One tool, on Amazon Bedrock with the Strands Agents SDK.<br>github.com/usv240/tally-prove</p>", 72)
@@ -173,24 +175,31 @@ def main(base: str, out: str) -> int:
     with sync_playwright() as p:
         b = p.chromium.launch()
         for s in scenes:
-            ctx = b.new_context(viewport={"width": W, "height": H}, record_video_dir=str(outdir / "raw"),
-                                record_video_size={"width": W, "height": H})
-            ctx.add_init_script("try{localStorage.setItem('tally-theme','light')}catch(e){}")
-            pg = ctx.new_page()
-            t0 = time.time()
-            note = s["run"](pg)
-            elapsed = time.time() - t0
-            hold = max(s["secs"] + 0.6, s["min_hold"]) - elapsed
-            if hold > 0:
-                pg.wait_for_timeout(int(hold * 1000))
-            video = pg.video
-            pg.close()
-            ctx.close()
-            src = Path(video.path())
-            s["video"] = outdir / "raw" / f"{s['name']}.webm"
-            src.rename(s["video"])
-            s["note"] = str(note)[:160] if isinstance(note, str) else ""
-            print(f"  {s['name']:<12} recorded {time.time() - t0:5.1f}s  {s['note'][:70]}")
+            for take in range(1, 4):
+                ctx = b.new_context(viewport={"width": W, "height": H}, record_video_dir=str(outdir / "raw"),
+                                    record_video_size={"width": W, "height": H})
+                ctx.add_init_script("try{localStorage.setItem('tally-theme','light')}catch(e){}")
+                pg = ctx.new_page()
+                t0 = time.time()
+                note = s["run"](pg)
+                elapsed = time.time() - t0
+                hold = max(s["secs"] + 0.6, s["min_hold"]) - elapsed
+                if hold > 0:
+                    pg.wait_for_timeout(int(hold * 1000))
+                video = pg.video
+                pg.close()
+                ctx.close()
+                src = Path(video.path())
+                s["video"] = outdir / "raw" / f"{s['name']}.webm"
+                if s["video"].exists():
+                    s["video"].unlink()
+                src.rename(s["video"])
+                s["note"] = str(note)[:160].replace("
+", " ") if isinstance(note, str) else ""
+                ok = s["good"] is None or s["good"](s["note"])
+                print(f"  {s['name']:<12} take {take} {time.time() - t0:5.1f}s  {'ok ' if ok else 'BAD'} {s['note'][:60]}")
+                if ok:
+                    break
         b.close()
 
     # Pad or trim each clip to its narration, mux the audio, then join.

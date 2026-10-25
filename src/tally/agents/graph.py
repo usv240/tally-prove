@@ -86,7 +86,11 @@ Do exactly what next_step says: say a proved answer; rewrite a contradicted one 
 rule quoted and prove it again; if it cannot be decided, ask her the one short question that settles
 it, drawn from the missing fact, and stop there. Never ask about things the rules do not turn on, such
 as brand or cup size. Never give her a rule answer that was not proved unless you say it is
-unverified."""
+unverified.
+
+Every number you say comes from one of two places: a rule prove_answer returned, or her own words.
+Never a limit from memory. If you do not have a proved rule with the number in it, leave the number
+out and say what was proved."""
 
 LEDGER ="""You close out the day's meals.
 
