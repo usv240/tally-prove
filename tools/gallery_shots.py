@@ -68,7 +68,9 @@ def main(base: str, out: str) -> int:
         pg.screenshot(path=str(outdir / "4-prove-your-agent.png"), full_page=False)
 
         pg.goto(f"{base}/", wait_until="networkidle")
-        pg.locator("#proof").screenshot(path=str(outdir / "5-before-after.png"))
+        # The sticky header would sit over the band's heading in an element capture.
+        pg.locator("#proof").screenshot(path=str(outdir / "5-before-after.png"),
+                                         style="header { visibility: hidden !important; }")
 
         # The September agent's answer with the number it remembered marked in red. The agent is
         # not deterministic, so this takes the first of a few tries that quotes the old limit.

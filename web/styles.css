@@ -264,6 +264,11 @@ section.band > .wrap > h2 { max-width: 24ch; }
   font-size: 1.125rem; font-style: italic; color: var(--text); max-width: 56ch;
 }
 
+/* The after, as the three things that happen in order. Each verdict sits on its own line above
+   what it says, so a wrapped sentence never tucks back under the badge. */
+.verdict-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s4); }
+.verdict-steps li { display: grid; gap: var(--s1); justify-items: start; }
+
 table.plain { width: 100%; border-collapse: collapse; font-size: .9375rem; }
 table.plain th, table.plain td { text-align: left; padding: var(--s3); border-bottom: 1px solid var(--border); vertical-align: top; }
 table.plain th { font-weight: 650; color: var(--text-muted); font-size: .875rem; }
@@ -463,9 +468,11 @@ p, li, .lede, .section-lede { text-wrap: pretty; }
    duration, so this costs nothing to anyone who has asked for stillness. */
 .btn, .theme-toggle button, [role="tab"], .info {
   transition: background-color .14s ease, border-color .14s ease,
-              color .14s ease, transform .14s ease;
+              color .14s ease, transform .16s cubic-bezier(.23, 1, .32, 1);
 }
-.btn:not(:disabled):active { transform: translateY(1px); }
+/* A press reads as a press: the control gives slightly, from its centre, and springs back on a
+   strong ease-out. A one-pixel nudge downward read as the page jittering. */
+.btn:not(:disabled):active, .theme-toggle button:active, [role="tab"]:active { transform: scale(.97); }
 
 /* Two rings rather than one: the accent, and a gap in the page colour so the ring reads on a
    button whose own fill is the accent. */

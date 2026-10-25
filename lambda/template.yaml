@@ -27,6 +27,9 @@ Resources:
       CodeUri: ./build
       MemorySize: 512
       Timeout: 30
+      # The Function URL is public so anyone can try it. Five at a time is plenty for a person
+      # trying it and caps what a script hammering it can spend on checks.
+      ReservedConcurrentExecutions: 5
       Environment:
         Variables:
           GUARDRAIL_ID: !Ref GuardrailId

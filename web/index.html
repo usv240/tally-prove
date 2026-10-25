@@ -94,11 +94,14 @@
       </div>
       <div class="card">
         <h3>After, same agent, same question</h3>
-        <p style="margin:0 0 var(--s2)"><span class="badge critical"><span class="shape" aria-hidden="true">&#x2B23;</span><span>contradicts a rule</span></span>
-          <span class="small muted"> Yogurt is creditable as a meat alternate only if it contains no more than 12 grams of added sugars per 6 ounces.</span></p>
-        <p style="margin:0 0 var(--s2)">It rewrites, then asks the one fact the rule turns on: "Is the 17 grams added sugars or total sugars?"</p>
-        <p style="margin:0"><span class="badge covered"><span class="shape" aria-hidden="true">&#x25A0;</span><span>proved</span></span>
-          <span class="small muted"> She reads 9 g added. The receipt is filed with the meal for the sponsor.</span></p>
+        <ol class="verdict-steps">
+          <li><span class="badge critical"><span class="shape" aria-hidden="true">&#x2B23;</span><span>contradicts a rule</span></span>
+            <span class="muted">"The yogurt sugar limit is measured in added sugars, not total sugars."</span></li>
+          <li><span class="badge high"><span class="shape" aria-hidden="true">&#x25C6;</span><span>asks her</span></span>
+            <span>"Is the 17 grams added sugars or total sugars?"</span></li>
+          <li><span class="badge covered"><span class="shape" aria-hidden="true">&#x25A0;</span><span>proved</span></span>
+            <span class="muted">She reads 9 g added. Under the 12 gram limit, and the receipt is filed with the meal for the sponsor.</span></li>
+        </ol>
       </div>
     </div>
 

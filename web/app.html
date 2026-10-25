@@ -94,9 +94,11 @@
       at the table. With proving on, the answer is checked against the regulation before you hear it.</p>
     <form id="ask-form" class="ask-form">
       <label for="ask-text" class="small" style="font-weight:550">Your question</label>
+      <span id="ask-hint" class="visually-hidden">Enter asks. Shift and Enter starts a new line.</span>
       <div class="ask-row">
-        <input id="ask-text" name="text" type="text" autocomplete="off" required
-               placeholder="Can I serve the strawberry yogurt cups as the meat alternate at snack? The label says 17 grams of sugar." />
+        <textarea id="ask-text" name="text" rows="1" autocomplete="off" required enterkeyhint="send"
+               aria-describedby="ask-hint"
+               placeholder="Can I serve the strawberry yogurt cups as the meat alternate at snack? The label says 17 grams of sugar."></textarea>
         <button class="btn primary" type="submit" id="ask-go">Ask</button>
       </div>
       <div class="ask-options">

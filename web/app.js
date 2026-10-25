@@ -425,7 +425,7 @@
      proves or contradicts, and the receipt is kept. The page shows what was actually checked,
      read back off the store, never what the model says it checked. */
 
-  var lastAsk = null;
+  var lastAsk = null, lastAskFresh = false;
 
   var VERDICT = {
     VALID: ["covered", "proved"],
@@ -435,6 +435,41 @@
     SKIPPED: ["low", "not checked"], UNCHECKED: ["low", "not checked"]
   };
 
+  /* The solver's statements in words a provider can read: camelCase split, enum prefixes dropped,
+     "MealType_SNACK" read as "snack". */
+  function human(f) {
+    return String(f).replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([a-z])(\d)/g, "$1 $2")
+      .replace(/(\d)([a-z])/gi, "$1 $2").toLowerCase()
+      .replace(/\b[a-z]+ ?type_(?=[a-z])/g, "").replace(/_/g, " ").replace(/\s+/g, " ").trim();
+  }
+
+  /* What an undecided check is still open on. The solver returns one case the rules allow where
+     the answer is false; two kinds of line in it tell her nothing, so they are dropped: the answer's
+     own claim restated ("is yogurt creditable is false"), and a value she already gave in her
+     question ("meal type is equal to snack"). */
+  function openFacts(p) {
+    return turnsOn(p.missing_facts, (p.question || "") + " " + (p.facts || ""));
+  }
+
+  /* The things an open answer turns on, as names: "yogurt added sugars per 6 ounces". The solver's
+     case reads "yogurtAddedSugarsPer6Ounces is equal to 12.5": the name is the fact to ask for, the
+     value is only one example of where the answer goes wrong. Values she already gave are dropped. */
+  function turnsOn(statements, given) {
+    given = " " + String(given).toLowerCase().replace(/[^a-z0-9. ]/g, " ") + " ";
+    var names = [];
+    (statements || []).map(human).forEach(function (t) {
+      if (/^is [a-z ]+ is (true|false)$/.test(t)) return;
+      var m = t.match(/^(.+?) is (?:equal to|at least|no more than|greater than|less than) (.+)$/)
+        || t.match(/^(.+?) is (true|false)$/);
+      if (!m) return;
+      var value = m[2].trim();
+      if (given.indexOf(" " + value + " ") >= 0 || given.indexOf(" " + value + "s ") >= 0) return;
+      if (m[1].split(" ").length < 2 || names.indexOf(m[1]) >= 0) return;
+      names.push(m[1]);
+    });
+    return names.slice(0, 2);
+  }
+
   var EXAMPLES = [
     "Can I serve the strawberry yogurt cups as the meat alternate at snack for the 3 to 5s? The label says 17 grams of sugar.",
     "Is milk and apple juice okay for afternoon snack?",
@@ -442,7 +477,7 @@
     "Do I need a whole grain today? Breakfast was white toast and lunch is rice."
   ];
 
-  function proofCard(p) {
+  function proofCard(p, showQuestion, fresh) {
     var v = VERDICT[p.verdict] || VERDICT.UNVERIFIED;
     var bad = p.verdict === "INVALID" || p.verdict === "IMPOSSIBLE";
     var open = p.verdict === "SATISFIABLE" || p.verdict === "AMBIGUOUS";
@@ -452,11 +487,21 @@
         "Check " + p.attempt + " of 3", window.infoBtn("attempt", "the three checks")]),
       window.h("span", { class: "when", text: window.fmtTime(p.at) + (p.latency_ms ? " · " + (p.latency_ms / 1000).toFixed(1) + " s" : "") })
     ]);
-    var card = window.h("div", { class: "proof" }, [
+    // Three checks of one question used to repeat the question three times. It is shown on the
+    // newest check of each question; the ones below it are the same thread.
+    var card = window.h("div", { class: "proof" + (fresh ? " fresh" : "") }, [
       head,
-      window.h("p", { class: "proof-q", text: "She asked: " + p.question }),
+      showQuestion ? window.h("p", { class: "proof-q", text: "She asked: " + p.question }) : null,
       window.h("p", { class: "proof-a" + (bad ? " struck" : ""), text: "Draft: " + p.answer })
     ]);
+    if (!bad && p.unsourced_numbers && p.unsourced_numbers.length) {
+      // The proof is about the decision. A number in the draft that is in neither her words nor the
+      // regulation is named, even on a proved card, rather than borrowing the proof's authority.
+      card.appendChild(window.h("p", { class: "small nowhere" }, [
+        window.h("strong", { text: "From nowhere: " + p.unsourced_numbers.join(", ") + ". " }),
+        "In neither her words nor the regulation. The proof covers the decision, not this number."
+      ]));
+    }
     if (p.rules && p.rules.length) {
       card.appendChild(window.h("blockquote", { class: "rule " + (bad ? "breaks" : "holds") }, [
         window.h("strong", { text: bad ? "The rule it breaks" : "The rule it rests on" }),
@@ -469,16 +514,23 @@
       var s = p.stakes;
       card.appendChild(window.h("p", { class: "stakes" }, [
         window.h("span", { class: "money lost", text: "$" + s.month.toFixed(2) }),
-        window.h("span", { class: "small muted", text: " not paid this month, had she followed it: one "
-          + s.meal + " a day for " + s.children + " children over " + s.serving_days
-          + " serving days at the " + s.tier.replace("_", " ") + " rate of $" + s.rate.toFixed(2) + "." }),
-        window.infoBtn("lost_amount", "the lost amount")
+        window.h("span", { class: "small muted why" }, [
+          "not paid this month, had she followed it: one " + s.meal + " a day for " + s.children
+            + " children over " + s.serving_days + " serving days at the " + s.tier.replace("_", " ")
+            + " rate of $" + s.rate.toFixed(2) + ".",
+          window.infoBtn("lost_amount", "the lost amount")
+        ])
       ]));
     }
-    if (open && p.missing_facts && p.missing_facts.length) {
+    if (open) {
+      // The solver's own words for an open case were "mealType is equal to MealType_SNACK;
+      // isYogurtCreditable is false". Read as plain words, minus what she already said.
+      var still = openFacts(p);
       card.appendChild(window.h("blockquote", { class: "rule missing" }, [
-        window.h("strong", { text: "What would settle it" }),
-        window.h("span", { text: p.missing_facts.slice(0, 2).join("; ") })
+        window.h("strong", { text: "Not settled by her facts" }),
+        window.h("span", { text: still.length
+          ? "It turns on " + still.join(" and ") + ". Tally asks her for it."
+          : "Her facts leave the answer open either way. Tally asks her the fact that decides it." })
       ]));
     }
     if (p.verdict === "UNVERIFIED") {
@@ -494,26 +546,30 @@
       // so a provider knows it is the logic's bookkeeping and not something she has to understand.
       card.appendChild(window.h("p", { class: "small muted", style: "margin:var(--s3) 0 0",
         text: "What the logic read from her facts:" }));
-      var chips = p.premises.map(function (f) {
-        return f.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([a-z])(\d)/g, "$1 $2")
-          .replace(/(\d)([a-z])/gi, "$1 $2").toLowerCase().replace(/[a-z ]+type_/g, "").replace(/_/g, " ");
-      }).filter(function (t, i, all) {
+      var chips = p.premises.map(human).filter(function (t, i, all) {
         // A premise that collapses to one word ("added") carries nothing a person can read.
         return t.split(" ").length > 2 && all.indexOf(t) === i;
       }).slice(0, 5);
       card.appendChild(window.h("div", { class: "facts", style: "margin-top:var(--s1)" },
         chips.map(function (t) { return window.h("span", { class: "chip", text: t }); })));
     }
+    // The receipt's provenance as short facts a reviewer scans, not two sentences: what checked
+    // it, where it is kept, and the id to find the call in the account's own CloudTrail.
     var policy = (p.policy_version || "").split("/").pop();
-    var filed = p.ledger && p.ledger.filed
-      ? "Filed in S3, locked until " + p.ledger.locked_until + ". "
-      : (p.ledger && p.ledger.reason ? "Not filed: " + p.ledger.reason + ". " : "");
-    card.appendChild(window.h("p", { class: "stamp" }, [
-      (p.verdict === "SKIPPED" ? "Proving was off. " : "Automated Reasoning policy " + (policy || "unversioned")
-        + ", guardrail version " + (p.guardrail_version || "?") + ". " + filed
-        + (p.request_id ? "AWS request " + p.request_id + ". " : "")),
-      window.infoBtn(p.ledger && p.ledger.filed ? "proof_ledger" : "proof_receipt", "the proof receipt")
-    ]));
+    var parts = p.verdict === "SKIPPED" ? ["Proving was off"] : [
+      "Policy " + (policy || "unversioned"),
+      "guardrail " + (p.guardrail_version || "?"),
+      p.ledger && p.ledger.filed ? "filed in S3, locked until " + p.ledger.locked_until
+        : (p.ledger && p.ledger.reason ? "not filed: " + p.ledger.reason : null),
+      p.request_id ? "AWS request " + p.request_id : null
+    ].filter(Boolean);
+    var stamp = window.h("p", { class: "stamp" }, []);
+    parts.forEach(function (t, i) {
+      if (i) stamp.appendChild(window.h("span", { class: "sep", "aria-hidden": "true", text: "·" }));
+      stamp.appendChild(window.h("span", { text: t }));
+    });
+    stamp.appendChild(window.infoBtn(p.ledger && p.ledger.filed ? "proof_ledger" : "proof_receipt", "the proof receipt"));
+    card.appendChild(stamp);
     return card;
   }
 
@@ -532,7 +588,8 @@
     if (lastAsk) {
       var tone = { VALID: "ok", INVALID: "alert", IMPOSSIBLE: "alert", SATISFIABLE: "ask", AMBIGUOUS: "ask" }[lastAsk.verdict] || "";
       box.hidden = false;
-      box.className = "ask-answer " + tone;
+      box.className = "ask-answer " + tone + (lastAskFresh ? " fresh" : "");
+      lastAskFresh = false;
       box.innerHTML = "";
       box.appendChild(window.h("span", { class: "who",
         text: lastAsk.prove ? "Tally, after proving" : "Tally, without the tool" }));
@@ -556,8 +613,80 @@
     }
     host.appendChild(window.h("h3", { style: "font-size:1rem;margin:0" },
       [proofs.length + (proofs.length === 1 ? " check today" : " checks today")]));
-    proofs.forEach(function (p) { host.appendChild(proofCard(p)); });
+    proofs.forEach(function (p, i) {
+      var fresh = seenProofs !== null && !seenProofs[p.id];
+      host.appendChild(proofCard(p, i === 0 || proofs[i - 1].question !== p.question, fresh));
+    });
+    // The first render marks everything as already seen, so opening the page moves nothing; after
+    // that only a receipt that was not there a moment ago rises into place.
+    seenProofs = seenProofs || {};
+    proofs.forEach(function (p) { seenProofs[p.id] = true; });
     window.MountInfo();
+  }
+
+  var seenProofs = null;
+
+  /* The agent's loop, in words, as the trace reports it. Only what the tool does is listed: the
+     draft, each check and its verdict, the receipt. */
+  var CHECK_WORDS = {
+    VALID: ["ok", "proved"], INVALID: ["bad", "contradicts a rule, so it rewrites"],
+    IMPOSSIBLE: ["bad", "what she described breaks a rule"],
+    SATISFIABLE: ["open", "not settled by her facts, so it will ask her"],
+    AMBIGUOUS: ["open", "not settled by her facts, so it will ask her"],
+    UNVERIFIED: ["", "could not be read as a rule question, so it restates"], SKIPPED: ["", "not checked"]
+  };
+  function stepFor(e) {
+    if (e.kind === "answer_drafted") {
+      return ["", e.attempt > 1 ? "Rewrote the answer. Check " + e.attempt + " of 3 against the regulation."
+                                 : "Drafted an answer. Check 1 of 3 against the regulation."];
+    }
+    if (e.kind === "answer_proved") {
+      var w = CHECK_WORDS[e.verdict] || ["", e.verdict];
+      return [w[0], "Check " + e.attempt + ": " + w[1] + (e.latency_ms ? ", in " + (e.latency_ms / 1000).toFixed(1) + " s." : ".")];
+    }
+    if (e.kind === "proof_filed") return ["", "Receipt filed in Amazon S3, locked for three years."];
+    if (e.kind === "proof_error") return ["bad", "The proof service did not answer. The answer will say it is unchecked."];
+    if (e.kind === "numbers_unsourced") return ["bad", "A number in the answer is in neither her words nor the regulation."];
+    return null;
+  }
+
+  function watchAsk(prove) {
+    var box = document.getElementById("ask-answer");
+    box.hidden = false;
+    box.className = "ask-answer working";
+    box.innerHTML = "";
+    box.appendChild(window.h("span", { class: "who", text: prove ? "Tally, working" : "Tally, answering from memory" }));
+    var list = window.h("ol", { class: "ask-steps" }, []);
+    var now = window.h("li", { class: "now", text: prove ? "Reading her question." : "No check: this is the agent as it shipped in September." });
+    list.appendChild(now);
+    box.appendChild(list);
+    var cursor = null, stopped = false, filed = null;
+    function poll() {
+      if (stopped) return;
+      api("/api/trace?since=" + (cursor === null ? 1e9 : cursor)).then(function (t) {
+        if (stopped) return;
+        if (cursor !== null) {
+          t.events.forEach(function (e) {
+            var s = stepFor(e);
+            if (!s) return;
+            // The receipt is written before the verdict is reported back, so the trace lists it
+            // first. A person reads "filed" before "proved" as backwards; hold it one step.
+            if (e.kind === "proof_filed") { filed = s; return; }
+            list.insertBefore(window.h("li", { class: "fresh " + s[0], text: s[1] }), now);
+            if (e.kind === "answer_proved" && filed) {
+              list.insertBefore(window.h("li", { class: "fresh " + filed[0], text: filed[1] }), now);
+              filed = null;
+            }
+            now.textContent = e.kind === "answer_drafted" ? "Waiting for the solver."
+              : e.kind === "answer_proved" && e.verdict !== "VALID" ? "Deciding what to tell her."
+              : "Writing the reply.";
+          });
+        }
+        cursor = t.next;
+      }).catch(function () {}).then(function () { if (!stopped) setTimeout(poll, 700); });
+    }
+    poll();
+    return function () { stopped = true; };
   }
 
   function renderTrace() {
@@ -704,9 +833,11 @@
     // Honest about time: a proof is a few seconds on top of the model call.
     setBusy(true, prove ? "Asking Tally. Proving the answer takes about ten seconds."
                         : "Asking Tally without the tool, as it was before.");
+    var stop = watchAsk(prove);
     api("/api/ask", { method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({ text: text, prove: prove }) })
-      .then(function (s) { lastAsk = s.ask; return after(s); }).catch(fail);
+      .then(function (s) { stop(); lastAsk = s.ask; lastAskFresh = true; return after(s); })
+      .catch(function (e) { stop(); fail(e); });
   }
 
   function reset() {
@@ -741,6 +872,14 @@
       form.addEventListener("submit", function (ev) {
         ev.preventDefault();
         askTally(document.getElementById("ask-text").value, document.getElementById("ask-prove").checked);
+      });
+      // A textarea so the whole question shows on a phone; Enter still asks, Shift and Enter is a
+      // new line, and a composition in progress (an IME) is left alone.
+      document.getElementById("ask-text").addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter" && !ev.shiftKey && !ev.isComposing) {
+          ev.preventDefault();
+          form.requestSubmit();
+        }
       });
       document.getElementById("ask-prove").addEventListener("change", function (ev) {
         document.getElementById("ask-mode").textContent = ev.target.checked

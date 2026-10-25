@@ -14,6 +14,7 @@ from typing import Any
 from tally import runtime
 from tally.agentcore.memory import status as memory_status
 from tally.models import Child, ComplianceItem, MealType, Provider
+from tally.numbers import unsourced
 from tally.runtime import Runtime
 from tally.store import Clock, MemoryStore
 
@@ -282,6 +283,7 @@ class DemoService:
             "policy_version": p.policy_version, "guardrail_version": p.guardrail_version,
             "latency_ms": p.latency_ms, "text_units": p.text_units, "request_id": p.request_id,
             "attempt": p.attempt, "meal_id": p.meal_id, "ledger": p.ledger, "stakes": self.stakes(p),
+            "unsourced_numbers": unsourced(p.answer, [p.question, p.facts]),
         }
 
     def stakes(self, p) -> dict | None:

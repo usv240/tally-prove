@@ -112,6 +112,11 @@
     UNVERIFIED: ["", "Outside the rulebook", "Nothing in the answer maps onto the meal pattern rules."],
     SKIPPED: ["", "Not checked", "The checker did not run."]
   };
+  function human(f) {
+    return String(f).replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([a-z])(\d)/g, "$1 $2")
+      .replace(/(\d)([a-z])/gi, "$1 $2").toLowerCase()
+      .replace(/\b[a-z]+ ?type_(?=[a-z])/g, "").replace(/_/g, " ").replace(/\s+/g, " ").trim();
+  }
   function curl() {
     $("curl").textContent = "curl -X POST " + URL + " \\\n  -H 'content-type: application/json' \\\n  -d '" +
       JSON.stringify({ question: $("q").value, facts: $("f").value, answer: $("a").value }, null, 0).replace(/'/g, "'\\''") + "'";
@@ -119,6 +124,8 @@
   function render(d) {
     var w = WORDS[d.verdict] || WORDS.UNVERIFIED;
     var out = $("out"); out.hidden = false; out.innerHTML = "";
+    // Each new verdict arrives, so pressing "Prove it" twice on the same answer still visibly answers.
+    out.classList.remove("fresh"); void out.offsetWidth; out.classList.add("fresh");
     out.appendChild(window.h("p", { class: "verdict " + w[0], text: w[1] }));
     out.appendChild(window.h("p", { class: "muted", style: "margin:0 0 var(--s3)", text: w[2] + " " + (d.latency_ms / 1000).toFixed(1) + " s."
       + (d.request_id ? " AWS request " + d.request_id + "." : "") }));
@@ -127,14 +134,29 @@
         window.h("strong", { text: w[0] === "bad" ? "The rule it breaks" : "The rule it rests on" }),
         window.h("span", { text: d.rules[0] })]));
     }
-    if (d.missing_facts && d.missing_facts.length && w[0] === "open") {
+    if (w[0] === "open") {
+      // The solver's case where the answer is false, in plain words, minus the answer's own claim
+      // restated and any value already in the question or the facts.
+      var given = " " + ($("q").value + " " + $("f").value).toLowerCase().replace(/[^a-z0-9. ]/g, " ") + " ";
+      var still = [];
+      (d.missing_facts || []).map(human).forEach(function (t) {
+        if (/^is [a-z ]+ is (true|false)$/.test(t)) return;
+        var m = t.match(/^(.+?) is (?:equal to|at least|no more than|greater than|less than) (.+)$/) || t.match(/^(.+?) is (true|false)$/);
+        if (!m) return;
+        var value = m[2].trim();
+        if (given.indexOf(" " + value + " ") >= 0 || given.indexOf(" " + value + "s ") >= 0) return;
+        if (m[1].split(" ").length < 2 || still.indexOf(m[1]) >= 0) return;
+        still.push(m[1]);
+      });
       out.appendChild(window.h("blockquote", { class: "rule missing", style: "margin:0 0 var(--s3)" }, [
-        window.h("strong", { text: "What would settle it" }), window.h("span", { text: d.missing_facts.slice(0, 2).join("; ") })]));
+        window.h("strong", { text: "Not settled by these facts" }),
+        window.h("span", { text: still.length ? "It turns on " + still.slice(0, 2).join(" and ") + ". Add it to the facts and prove again."
+                                              : "The facts leave the answer open either way. Add the one that decides it and prove again." })]));
     }
     if (d.premises && d.premises.length) {
       out.appendChild(window.h("p", { class: "small muted", style: "margin:0 0 var(--s1)", text: "What the logic read from the facts:" }));
       out.appendChild(window.h("div", { class: "facts", style: "margin:0" }, d.premises.slice(0, 5).map(function (f) {
-        return window.h("span", { class: "chip", text: f.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([a-z])(\d)/g, "$1 $2").toLowerCase().replace(/[a-z ]+type_/g, "").replace(/_/g, " ") });
+        return window.h("span", { class: "chip", text: human(f) });
       })));
     }
     window.MountInfo();
