@@ -56,13 +56,15 @@ def polly(text: str, out: Path) -> float:
     return float(d)
 
 
-def main(base: str, out: str) -> int:
+def main(base: str, out: str, only: set[str] | None = None) -> int:
     outdir = Path(out)
-    if outdir.exists():
+    # `only` names scenes to re-record; every other scene reuses its narration and clip from the last
+    # run, so one unlucky take does not cost a full pass against a non-deterministic agent.
+    if outdir.exists() and not only:
         shutil.rmtree(outdir)
-    (outdir / "raw").mkdir(parents=True)
+    (outdir / "raw").mkdir(parents=True, exist_ok=True)
     cards = outdir / "cards"
-    cards.mkdir()
+    cards.mkdir(exist_ok=True)
 
     scenes: list[dict] = []
 
@@ -80,7 +82,7 @@ def main(base: str, out: str) -> int:
 
     def rebuild_for_follow(take: int) -> None:
         """Scene 6 answers the question scene 5 asked. A retake of 6 alone has to ask it again first."""
-        if take > 1:
+        if take > 1 or only:
             reset_day(take)
             post("/api/ask", {"text": Q, "prove": True})
 
@@ -203,12 +205,21 @@ def main(base: str, out: str) -> int:
     # Narration first, so each clip knows how long to hold.
     for s in scenes:
         s["audio"] = outdir / "raw" / f"{s['name']}.mp3"
+        s["video"] = outdir / "raw" / f"{s['name']}.webm"
+        if only and s["name"] not in only and s["audio"].exists() and s["video"].exists():
+            s["secs"] = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of",
+                                              "csv=p=0", str(s["audio"])], capture_output=True, text=True,
+                                             check=True).stdout.strip())
+            s["keep"] = True
+            continue
         s["secs"] = polly(s["say"], s["audio"])
         print(f"  {s['name']:<12} narration {s['secs']:5.1f}s")
 
     with sync_playwright() as p:
         b = p.chromium.launch()
         for s in scenes:
+            if s.get("keep"):
+                continue
             for take in range(1, 6):
                 if s["prep"]:
                     s["prep"](take)
@@ -217,7 +228,10 @@ def main(base: str, out: str) -> int:
                 ctx.add_init_script("try{localStorage.setItem('tally-theme','light')}catch(e){}")
                 pg = ctx.new_page()
                 t0 = time.time()
-                note = s["run"](pg)
+                try:
+                    note = s["run"](pg)
+                except Exception as exc:  # a take the agent never finished is a bad take, not a crash
+                    note = f"TIMED OUT {type(exc).__name__}"
                 elapsed = time.time() - t0
                 hold = max(s["secs"] + 0.6, s["min_hold"]) - elapsed
                 if hold > 0:
@@ -266,4 +280,5 @@ def main(base: str, out: str) -> int:
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1] if len(sys.argv) > 1 else "https://dtvxrkiam6.us-east-1.awsapprunner.com",
-                  sys.argv[2] if len(sys.argv) > 2 else "out/video"))
+                  sys.argv[2] if len(sys.argv) > 2 else "out/video",
+                  set(sys.argv[3].split(",")) if len(sys.argv) > 3 else None))

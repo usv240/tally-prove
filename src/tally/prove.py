@@ -58,7 +58,10 @@ def config() -> dict:
     if DEPLOYED.exists():
         d = json.loads(DEPLOYED.read_text())
         if d.get("guardrail_id") and d.get("guardrail_version"):
-            return {"guardrail_id": d["guardrail_id"], "guardrail_version": str(d["guardrail_version"])}
+            cfg = {"guardrail_id": d["guardrail_id"], "guardrail_version": str(d["guardrail_version"])}
+            if d.get("policy_arn") and d.get("policy_version"):
+                cfg["policy_version"] = f"{d['policy_arn']}:{d['policy_version']}"
+            return cfg
     return {}
 
 
@@ -259,4 +262,7 @@ def prove(question: str, answer: str, facts: str = "", client=None, cfg: dict | 
     checked.latency_ms = int((time.time() - t0) * 1000)
     checked.request_id = str((response.get("ResponseMetadata") or {}).get("RequestId") or "")
     checked.guardrail_version = str(cfg["guardrail_version"])
+    # An undecided finding lists no rules, so it carries no policy ARN; the receipt still names the
+    # version it was checked under rather than printing "unversioned".
+    checked.policy_version = checked.policy_version or str(cfg.get("policy_version") or "")
     return checked

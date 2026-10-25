@@ -27,7 +27,9 @@ def main(base: str, out: str) -> int:
         pg.wait_for_selector(".proof", timeout=20000)
         ask = pg.locator("#ask")
         ask.screenshot(path=str(outdir / "1-ask-and-proofs.png"))
-        pg.locator(".proof").first.screenshot(path=str(outdir / "2-proof-card.png"))
+        # The cover is the contradiction with the dollar figure, whichever card happens to be newest.
+        hit = pg.locator(".proof").filter(has_text="CONTRADICTS")
+        (hit.first if hit.count() else pg.locator(".proof").first).screenshot(path=str(outdir / "2-proof-card.png"))
 
         pg.goto(f"{base}/sponsor.html", wait_until="networkidle")
         pg.wait_for_timeout(1500)
@@ -39,6 +41,19 @@ def main(base: str, out: str) -> int:
 
         pg.goto(f"{base}/", wait_until="networkidle")
         pg.locator("#proof").screenshot(path=str(outdir / "5-before-after.png"))
+
+        # The September agent's answer with the number it remembered marked in red. The agent is
+        # not deterministic, so this takes the first of a few tries that quotes the old limit.
+        for _ in range(4):
+            pg.goto(f"{base}/app.html#ask", wait_until="networkidle")
+            pg.locator("#ask-text").fill("Can I serve the strawberry yogurt cups as the meat alternate at snack "
+                                         "for the 3 to 5s? The label says 17 grams of sugar.")
+            pg.locator("#ask-prove").uncheck()
+            pg.locator("#ask-go").click()
+            pg.locator("#ask-answer:not([hidden])").wait_for(timeout=120000)
+            if "From nowhere" in pg.locator("#ask-answer").inner_text():
+                pg.locator("#ask-answer").screenshot(path=str(outdir / "6-before-from-nowhere.png"))
+                break
         b.close()
     for f in sorted(outdir.glob("*.png")):
         print(f"  {f.name}  {f.stat().st_size // 1024} KB")
