@@ -194,8 +194,7 @@ def main(base: str, out: str) -> int:
                 if s["video"].exists():
                     s["video"].unlink()
                 src.rename(s["video"])
-                s["note"] = str(note)[:160].replace("
-", " ") if isinstance(note, str) else ""
+                s["note"] = str(note)[:160].replace(chr(10), " ") if isinstance(note, str) else ""
                 ok = s["good"] is None or s["good"](s["note"])
                 print(f"  {s['name']:<12} take {take} {time.time() - t0:5.1f}s  {'ok ' if ok else 'BAD'} {s['note'][:60]}")
                 if ok:

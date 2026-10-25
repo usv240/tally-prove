@@ -63,3 +63,5 @@ ignore = [
 "src/*/agents/prompts.py" = ["E501"]
 "src/*/data/generate.py" = ["E501"]
 "src/*/messaging.py" = ["E501"]
+# Narration lines and title-card HTML are sentences; wrapping them mid sentence helps nobody.
+"tools/make_video.py" = ["E501"]
