@@ -35,7 +35,8 @@ def _record(question: str, answer: str, facts: str, checked: prove.Checked, atte
         rules=checked.rules, premises=checked.premises, claims=checked.claims,
         untranslated=checked.untranslated, missing_facts=checked.missing_facts,
         policy_version=checked.policy_version, guardrail_version=checked.guardrail_version,
-        latency_ms=checked.latency_ms, text_units=checked.text_units, attempt=attempt, meal_id=meal_id,
+        latency_ms=checked.latency_ms, text_units=checked.text_units, request_id=checked.request_id,
+        attempt=attempt, meal_id=meal_id,
     )
     # Filed before it is stored, so a receipt a reviewer is shown is one the ledger already holds.
     if ledger.enabled() and checked.verdict != "SKIPPED":

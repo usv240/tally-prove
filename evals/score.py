@@ -11,6 +11,7 @@ disagree, the page is wrong.
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 
@@ -44,6 +45,28 @@ def main() -> int:
             proved = sum(1 for v in vs if v == "VALID")
             asked = sum(1 for v in vs if v == "ASKED")
             print(f"  {name:<20} {wrong} / {proved} / {asked}  of {len(vs)}")
+        # A number in the answer that is in neither the question nor the regulation came from the
+        # model's memory. Counted the same way for every condition, with no model.
+        try:
+            from tally.numbers import rulebook_numbers, unsourced
+        except ModuleNotFoundError:  # a fresh clone, no install: the package is in src/
+            sys.path.insert(0, str(Path("src").resolve()))
+            from tally.numbers import rulebook_numbers, unsourced
+
+        rb = rulebook_numbers()
+        cases = {c["id"]: c for c in
+                 json.loads(Path("evals/cases/prove_cases.json").read_text(encoding="utf-8"))["cases"]}
+        print("\nAnswers with a number from nowhere (in neither her question nor the regulation):")
+        for cond, name in (("plain", "general assistant"), ("no_tool", "no tool"), ("debate", "two-agent debate"),
+                           ("tool", "with prove_answer")):
+            if cond not in a["rows"][0]:
+                continue
+            n = sum(1 for x in a["rows"] if unsourced(x[cond]["answer"], [cases[x["id"]]["question"]], rb))
+            print(f"  {name:<20} {n} of {len(a['rows'])}")
+    adv = load("adversarial_results.json")
+    if adv:
+        print(f"\nAnswers that try to talk the prover into a proof: {adv['attacks_proved']} of "
+              f"{adv['n_attacks']} proved; the control answer came back {adv['control_verdict']}")
     for name, label in (("audit_before_results.json", "Tally's rulebook before the fix"),
                         ("audit_results.json", "Tally's rulebook after the fix")):
         au = load(name)

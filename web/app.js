@@ -510,7 +510,8 @@
       : (p.ledger && p.ledger.reason ? "Not filed: " + p.ledger.reason + ". " : "");
     card.appendChild(window.h("p", { class: "stamp" }, [
       (p.verdict === "SKIPPED" ? "Proving was off. " : "Automated Reasoning policy " + (policy || "unversioned")
-        + ", guardrail version " + (p.guardrail_version || "?") + ". " + filed),
+        + ", guardrail version " + (p.guardrail_version || "?") + ". " + filed
+        + (p.request_id ? "AWS request " + p.request_id + ". " : "")),
       window.infoBtn(p.ledger && p.ledger.filed ? "proof_ledger" : "proof_receipt", "the proof receipt")
     ]));
     return card;
@@ -536,6 +537,14 @@
       box.appendChild(window.h("span", { class: "who",
         text: lastAsk.prove ? "Tally, after proving" : "Tally, without the tool" }));
       box.appendChild(window.h("span", { text: lastAsk.answer }));
+      if (lastAsk.unsourced_numbers && lastAsk.unsourced_numbers.length) {
+        // A number that is in neither her words nor the regulation came from the model's memory,
+        // which is where last year's rule lives. Named, so nobody has to take the prompt's word.
+        box.appendChild(window.h("p", { class: "small nowhere" }, [
+          window.h("strong", { text: "From nowhere: " + lastAsk.unsourced_numbers.join(", ") + ". " }),
+          "This number is in neither her words nor the regulation. The model remembered it."
+        ]));
+      }
     }
     var host = document.getElementById("proofs");
     host.innerHTML = "";

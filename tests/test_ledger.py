@@ -48,7 +48,7 @@ def test_files_a_locked_object_under_provider_and_day(monkeypatch):
     put = fake.puts[0]
     assert put["ObjectLockMode"] == "COMPLIANCE"
     assert put["ObjectLockRetainUntilDate"] == datetime(2026, 9, 8, 7, 38) + timedelta(days=ledger.RETENTION_DAYS)
-    assert put["Metadata"] == {"verdict": "VALID", "guardrail-version": "8", "policy-version": "x:7"}
+    assert put["Metadata"] == {"verdict": "VALID", "guardrail-version": "8", "policy-version": "x:7", "request-id": ""}
     assert ledger.read("rosa", proof())["id"] == "proof-abc12345"
 
 

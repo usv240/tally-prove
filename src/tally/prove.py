@@ -121,6 +121,9 @@ class Checked:
     latency_ms: int = 0
     text_units: int = 0
     raw_kinds: list[str] = field(default_factory=list)
+    request_id: str = ""
+    """The AWS request id of the ApplyGuardrail call, so a receipt can be matched to the account's
+    own CloudTrail record by someone who trusts neither Tally nor this page."""
 
     def summary(self) -> str:
         if self.verdict == "VALID":
@@ -254,5 +257,6 @@ def prove(question: str, answer: str, facts: str = "", client=None, cfg: dict | 
         source="OUTPUT", outputScope="FULL", content=content)
     checked = interpret(response)
     checked.latency_ms = int((time.time() - t0) * 1000)
+    checked.request_id = str((response.get("ResponseMetadata") or {}).get("RequestId") or "")
     checked.guardrail_version = str(cfg["guardrail_version"])
     return checked

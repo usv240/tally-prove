@@ -161,9 +161,28 @@ def ask(text: str, with_prove: bool | None = None) -> dict:
     proofs = [p for p in r.store.list_proofs() if p.id not in before]
     verdict = proofs[-1].verdict if proofs else ("UNCHECKED" if enabled else "SKIPPED")
     tone = {"VALID": "ok", "INVALID": "alert"}.get(verdict, "info")
+    # Every number in the answer should be hers or the regulation's. The prompt says so; this is the
+    # code that checks, so the page can show "23 came from nowhere" instead of trusting the prompt.
+    from tally.numbers import unsourced
+
+    nowhere = unsourced(answer, her_words(agent))
+    if nowhere:
+        r.emit("numbers_unsourced", numbers=nowhere, prove=enabled)
     r.say(answer, tone=tone)
     return {"question": text, "answer": answer, "prove": enabled, "verdict": verdict,
-            "proof_ids": [p.id for p in proofs]}
+            "proof_ids": [p.id for p in proofs], "unsourced_numbers": nowhere}
+
+
+def her_words(agent: Agent) -> list[str]:
+    """Everything the provider has said in this conversation, as plain strings."""
+    out: list[str] = []
+    for m in getattr(agent, "messages", None) or []:
+        if m.get("role") != "user":
+            continue
+        for block in m.get("content") or []:
+            if isinstance(block, dict) and block.get("text"):
+                out.append(block["text"])
+    return out
 
 
 def ledger_agent() -> Agent:

@@ -145,6 +145,8 @@ class Proof(BaseModel):
     guardrail_version: str = ""
     latency_ms: int = 0
     text_units: int = 0
+    request_id: str = ""
+    """AWS request id of the check, for matching the receipt against CloudTrail."""
     attempt: int = 1
     meal_id: str | None = None
     ledger: dict = Field(default_factory=dict)

@@ -175,3 +175,17 @@ def test_the_rule_that_speaks_to_the_claim_is_quoted_first():
     assert c.verdict == "VALID"
     assert c.rules[0].startswith("Yogurt must contain")
     assert prove.rule_vars("R_Y3", DEFINITION) == {"isYogurtCreditable", "yogurtAddedSugarsPer6Ounces"}
+
+
+def test_the_aws_request_id_travels_with_the_check():
+    """A receipt carries the request id of the ApplyGuardrail call, so it can be matched to CloudTrail."""
+
+    class Fake:
+        def apply_guardrail(self, **kw):
+            r = response({"valid": {"translation": translation(claims=["isYogurtCreditable is true"]),
+                                    "supportingRules": [{"identifier": "R_Y3"}]}})
+            r["ResponseMetadata"] = {"RequestId": "req-123"}
+            return r
+
+    c = prove.prove("Q?", "A.", client=Fake(), cfg={"guardrail_id": "g", "guardrail_version": "2"})
+    assert c.request_id == "req-123"

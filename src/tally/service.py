@@ -280,8 +280,8 @@ class DemoService:
             "facts": p.facts, "verdict": p.verdict, "rules": p.rules, "premises": p.premises,
             "claims": p.claims, "missing_facts": p.missing_facts, "untranslated": p.untranslated,
             "policy_version": p.policy_version, "guardrail_version": p.guardrail_version,
-            "latency_ms": p.latency_ms, "text_units": p.text_units, "attempt": p.attempt,
-            "meal_id": p.meal_id, "ledger": p.ledger, "stakes": self.stakes(p),
+            "latency_ms": p.latency_ms, "text_units": p.text_units, "request_id": p.request_id,
+            "attempt": p.attempt, "meal_id": p.meal_id, "ledger": p.ledger, "stakes": self.stakes(p),
         }
 
     def stakes(self, p) -> dict | None:

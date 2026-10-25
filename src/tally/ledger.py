@@ -66,7 +66,8 @@ def file(proof, provider_id: str) -> dict:
             ObjectLockMode="COMPLIANCE",
             ObjectLockRetainUntilDate=proof.at + timedelta(days=RETENTION_DAYS),
             Metadata={"verdict": proof.verdict, "guardrail-version": proof.guardrail_version or "",
-                      "policy-version": proof.policy_version.split("/")[-1] if proof.policy_version else ""},
+                      "policy-version": proof.policy_version.split("/")[-1] if proof.policy_version else "",
+                      "request-id": proof.request_id or ""},
         )
         until = (proof.at + timedelta(days=RETENTION_DAYS)).date().isoformat()
         return {"filed": True, "bucket": b, "key": key, "locked_until": until}

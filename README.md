@@ -130,6 +130,14 @@ checks**, which hold 7 CFR 226.20 as formal logic, and returns a verdict the age
 It is a proof, not a second model's opinion. Three checks per question, then an honest "I could not
 verify this". The rulebook is `reasoning/cacfp_meal_pattern.txt` (sources in
 `reasoning/SOURCES.md`); `python -m deploy.reasoning_policy all` builds the policy and the guardrail.
+
+What the tool trusts: the regulation, compiled once, at a pinned version. What it does not: the
+question, the facts and the draft, which enter as premises and a claim and cannot add a rule or move
+a number (`python -m evals.adversarial_eval`: 0 of 9 answers that try are proved); the model's
+numbers, which `src/tally/numbers.py` checks in code against her words and the regulation and names
+on the page when one comes from neither; and Tally itself, since every receipt carries the AWS
+request id of the check beside the policy and guardrail versions, in the page, the API, the Lambda
+reply and the S3 object's metadata.
 `TALLY_PROVE=off` runs the agent exactly as it was, which is how the before and after was filmed.
 `python -m evals.score` recounts every published number from the saved results in a second, with no
 AWS account and no model.

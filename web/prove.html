@@ -120,7 +120,8 @@
     var w = WORDS[d.verdict] || WORDS.UNVERIFIED;
     var out = $("out"); out.hidden = false; out.innerHTML = "";
     out.appendChild(window.h("p", { class: "verdict " + w[0], text: w[1] }));
-    out.appendChild(window.h("p", { class: "muted", style: "margin:0 0 var(--s3)", text: w[2] + " " + (d.latency_ms / 1000).toFixed(1) + " s." }));
+    out.appendChild(window.h("p", { class: "muted", style: "margin:0 0 var(--s3)", text: w[2] + " " + (d.latency_ms / 1000).toFixed(1) + " s."
+      + (d.request_id ? " AWS request " + d.request_id + "." : "") }));
     if (d.rules && d.rules.length) {
       out.appendChild(window.h("blockquote", { class: "rule " + (w[0] === "bad" ? "breaks" : "holds"), style: "margin:0 0 var(--s3)" }, [
         window.h("strong", { text: w[0] === "bad" ? "The rule it breaks" : "The rule it rests on" }),
