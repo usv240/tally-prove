@@ -107,6 +107,8 @@ shapes.
 
 ### One new tool, October 2026: `prove_answer`
 
+**The model drafts. The regulation decides.** The model never decides what is true.
+
 Built for the AWS Builder Center weekend challenge *Give your Agent a Tool*. Everything above is the
 agent as it shipped in September; that version is untouched at
 [github.com/usv240/tally](https://github.com/usv240/tally), and this repository carries its full
