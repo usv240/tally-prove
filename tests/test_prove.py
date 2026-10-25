@@ -7,10 +7,12 @@ import pytest
 from tally import prove
 
 DEFINITION = {"rules": [
-    {"id": "R_Y3", "expression": "(=> yogurt (<= addedSugarsPer6oz 12))",
+    {"id": "R_Y3", "expression": "(=> isYogurtCreditable (<= yogurtAddedSugarsPer6Ounces 12))",
      "alternateExpression": "Yogurt must contain no more than 12 grams of added sugars per 6 ounces."},
-    {"id": "R_S3", "expression": "(=> (and milk juice onlyTwo) (not reimbursable))",
+    {"id": "R_S3", "expression": "(=> (and snackHasFluidMilk snackHasJuice snackOnlyItemsAreMilkAndJuice) (not isMealReimbursable))",
      "alternateExpression": "A snack of fluid milk and fruit juice is not reimbursable."},
+    {"id": "R_M6", "expression": "(=> (>= childAgeYears 6) milkMayBeFlavored)",
+     "alternateExpression": "Children who are 6 and older may be served flavored milk."},
 ]}
 
 
@@ -162,3 +164,14 @@ def test_enabled_reads_the_switch(monkeypatch):
     assert not prove.enabled()
     monkeypatch.setenv("TALLY_PROVE", "1")
     assert prove.enabled()
+
+
+def test_the_rule_that_speaks_to_the_claim_is_quoted_first():
+    """The solver lists every rule it touched; a yogurt proof once led with a milk rule."""
+    r = response({"valid": {"translation": translation(claims=["isYogurtCreditable is true",
+                                                                "yogurtAddedSugarsPer6Ounces is equal to 9.0"]),
+                            "supportingRules": [{"identifier": "R_M6"}, {"identifier": "R_S3"}, {"identifier": "R_Y3"}]}})
+    c = prove.interpret(r, DEFINITION)
+    assert c.verdict == "VALID"
+    assert c.rules[0].startswith("Yogurt must contain")
+    assert prove.rule_vars("R_Y3", DEFINITION) == {"isYogurtCreditable", "yogurtAddedSugarsPer6Ounces"}

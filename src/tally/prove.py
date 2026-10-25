@@ -85,6 +85,27 @@ def rule_text(identifier: str, definition: dict | None = None) -> str:
     return table.get(identifier, identifier)
 
 
+_VAR = re.compile(r"\b([a-z][A-Za-z0-9]*[A-Z][A-Za-z0-9]*)\b")
+"""Variable names as the solver writes them: camelCase with at least one capital."""
+
+_EXPR: dict[str, str] | None = None
+
+
+def rule_vars(identifier: str, definition: dict | None = None) -> set[str]:
+    """The variables a rule's formal expression mentions, so a receipt can lead with the rule that
+    speaks to the claim rather than the first one the solver happened to list."""
+    global _EXPR
+    if definition is not None:
+        table = {r["id"]: r["expression"] for r in definition.get("rules", [])}
+    else:
+        if _EXPR is None:
+            _EXPR = {}
+            if DEFINITION.exists():
+                _EXPR = {r["id"]: r["expression"] for r in json.loads(DEFINITION.read_text()).get("rules", [])}
+        table = _EXPR
+    return set(_VAR.findall(table.get(identifier, "")))
+
+
 @dataclass
 class Checked:
     """What the solver said about one answer. The tool turns this into a stored Proof."""
@@ -146,12 +167,17 @@ def interpret(response: dict, definition: dict | None = None) -> Checked:
         # claim "true" lists the entire policy as its support, and on the first live deploy that put
         # 87 rules on a receipt whose answer broke one.
         decisive = kind == worst_kind and any(c.strip().lower() != "true" for c in claims)
-        for rule in d.get("contradictingRules", []) + (d.get("supportingRules", []) if decisive else []):
-            if kind != worst_kind:
-                continue
-            out.rules.append(rule_text(rule.get("identifier", ""), definition))
-            if rule.get("policyVersionArn"):
-                out.policy_version = rule["policyVersionArn"]
+        ids = [r.get("identifier", "") for r in
+               d.get("contradictingRules", []) + (d.get("supportingRules", []) if decisive else [])]
+        if kind == worst_kind and ids:
+            # A VALID finding lists every rule the solver touched, so a yogurt proof once quoted a
+            # milk rule first. Rules that mention a variable in the claim come first: that is the
+            # rule the answer actually rests on.
+            claim_vars = {v for c in claims for v in _VAR.findall(c)}
+            ids.sort(key=lambda i: not (rule_vars(i, definition) & claim_vars))
+            out.rules += [rule_text(i, definition) for i in ids]
+            arns = [r.get("policyVersionArn") for r in d.get("contradictingRules", []) + d.get("supportingRules", [])]
+            out.policy_version = next((a for a in arns if a), out.policy_version)
         if kind == "satisfiable":
             out.missing_facts += _nl((d.get("claimsFalseScenario") or {}).get("statements", []))
         if kind == "translationAmbiguous":

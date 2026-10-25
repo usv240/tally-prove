@@ -69,7 +69,7 @@ def main(base: str, out: str) -> int:
     def scene(name: str, say: str, run, min_hold: float = 0.0, tail: bool = False, good=None):
         """tail=True keeps the END of the recording: live scenes wait on the agent, and the viewer
         should see the result arrive, not the whole wait. `good(note)` says whether a take is usable;
-        the live agent is not deterministic, so a bad take is re-recorded, up to three times."""
+        the live agent is not deterministic, so a bad take is re-recorded, up to five times."""
         scenes.append({"name": name, "say": say, "run": run, "min_hold": min_hold, "tail": tail, "good": good})
 
     # 1. The opener, as a card in our own type.
@@ -96,11 +96,11 @@ def main(base: str, out: str) -> int:
         pg.locator("#ask-answer:not([hidden])").wait_for(timeout=120000)
         pg.wait_for_timeout(2500)
         return pg.locator("#ask-answer").inner_text()
-    scene("03-before", "Ask it what the rules say. Proving off: this is the agent as it shipped in September. Confident, from memory, with no way to check itself.", s3, tail=True, good=lambda n: "23" in n)
+    scene("03-before", "Ask it what the rules say, with proving off. This is the agent as it shipped in September. On some runs it quotes a limit from memory; on others it dodges and asks for a photo. Either way, it has no way to check.", s3, tail=True, good=lambda n: "23" in n)
 
     # 4. The cost.
     c4 = card(cards / "4.html", "<div class='n'>$194.04</div><h1 style='font-size:44px'>not paid this month, had she followed the old answer.</h1><p>One snack a day, nine children, 22 serving days, at this year's rate. A disallowed meal is the whole meal.</p>", 44)
-    scene("04-cost", "That answer has been wrong since October 2025. Followed for a month, it is 194 dollars not paid for nine children.",
+    scene("04-cost", "When it does answer from memory, it says the 23 gram limit. That limit expired in October 2025. Followed for a month, that one answer is 194 dollars not paid for nine children.",
           lambda pg: (pg.goto(c4), pg.wait_for_timeout(500)))
 
     # 5. After: proving on.
@@ -175,7 +175,7 @@ def main(base: str, out: str) -> int:
     with sync_playwright() as p:
         b = p.chromium.launch()
         for s in scenes:
-            for take in range(1, 4):
+            for take in range(1, 6):
                 ctx = b.new_context(viewport={"width": W, "height": H}, record_video_dir=str(outdir / "raw"),
                                     record_video_size={"width": W, "height": H})
                 ctx.add_init_script("try{localStorage.setItem('tally-theme','light')}catch(e){}")
