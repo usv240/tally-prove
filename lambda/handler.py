@@ -49,6 +49,6 @@ def handler(event, context):
 
 
 def _reply(status: int, body: dict) -> dict:
-    return {"statusCode": status, "headers": {"content-type": "application/json",
-                                              "access-control-allow-origin": "*"},
-            "body": json.dumps(body)}
+    # No CORS headers here: the Function URL adds them from template.yaml, and a browser that sees
+    # the header twice refuses the response. The first prove.html did exactly that.
+    return {"statusCode": status, "headers": {"content-type": "application/json"}, "body": json.dumps(body)}
