@@ -206,8 +206,10 @@ def main(base: str, out: str, only: set[str] | None = None) -> int:
         return lambda: marks.__setitem__(name, time.time())
 
     # 1. Who this is for, and what is at stake.
-    c1 = card(cards / "1.html", "<div class='k'>Home child care, United States</div><h1>Rosa feeds nine children a day. A federal program pays for each meal, if the meal follows the rules.</h1><p>And the rules change. The yogurt rule changed in October 2025.</p>", 60, fonts)
-    scene("01-open", "Rosa runs child care from her home. A federal program pays for the meals she serves, but only when each meal follows the rules. And the rules change.",
+    # A judge has never heard of this program. The card says, in plain words, the one rule the whole
+    # demo turns on, before anything uses the regulation's vocabulary ("meat alternate", "credits").
+    c1 = card(cards / "1.html", "<div class='k'>Home child care, United States</div><h1>Rosa feeds nine children a day. A federal food program pays for each meal, if the meal has the right parts.</h1><p>Yogurt can count as a snack's protein, the part the rules call the <b>meat alternate</b>, but only if it is low in added sugar. That limit changed in October 2025.</p>", 58, fonts)
+    scene("01-open", "Rosa runs child care from her home. A federal food program pays for every meal she serves, but only if the meal has the right parts. Yogurt can count as a snack's protein, if it is low enough in added sugar. And that limit changed last year.",
           lambda pg: (pg.goto(c1), pg.wait_for_timeout(500)))
 
     # 2. Tally, as it was in September, with breakfast logged.
@@ -239,7 +241,7 @@ def main(base: str, out: str, only: set[str] | None = None) -> int:
         if nowhere.count():
             point(nowhere, 4000)
         return pg.locator("#ask-answer").inner_text()
-    scene("03-before", "Before. She asks whether the strawberry yogurt counts at snack. The label says seventeen grams of sugar. Tally answers from memory, with a twenty-three gram limit. That limit expired a year ago. The page marks the number in red: it is in neither her words nor the regulation.",
+    scene("03-before", "Before. She asks whether the strawberry yogurt can count as the snack's protein. The label says seventeen grams of sugar. Tally answers from memory, with a twenty-three gram limit. That limit expired a year ago. The page marks the number in red: it is in neither her words nor the regulation.",
           s3, ramp=True, keep=11.0, prep=reset_day, good=lambda n: "From nowhere: 23" in n)
 
     # 4. What that one answer costs.
