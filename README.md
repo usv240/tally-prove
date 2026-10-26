@@ -293,10 +293,23 @@ python -m tally.agentcore.provision --list   # shows what exists
 
 ## Tests and checks
 
-Everything below runs in GitHub Actions on every push. See `.github/workflows/ci.yml`.
+GitHub Actions runs the house-style check, Ruff, unit tests, deterministic refusal and baseline
+evals, and accessibility audits. The remaining commands below are separate local checks; live
+Bedrock evaluations are not run by CI. See `.github/workflows/ci.yml`.
+
+The workflow is configured for pushes to `main`, pull requests, and manual dispatch. In this
+submission repository, automatic push runs have not yet been observed. The manually dispatched
+run for commit `112b609` passed both jobs. Until automatic triggering is verified, run CI explicitly:
 
 ```bash
-pytest -q                         # 186 tests, no model calls, under fifteen seconds
+gh workflow run ci --repo usv240/tally-prove --ref main
+gh run list --repo usv240/tally-prove --workflow ci --limit 5
+```
+
+Local checks:
+
+```bash
+pytest -q                         # 193 tests, no model calls
 ruff check src tests tools        # lint
 python tools/check_copy.py        # house style: no emoji, no em or en dashes, anywhere
 
