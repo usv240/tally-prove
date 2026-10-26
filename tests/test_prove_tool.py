@@ -45,6 +45,21 @@ def test_satisfiable_asks_for_the_missing_fact(rt, monkeypatch):
     assert "Ask her" in out["next_step"] and "added sugars exceed 12 g" in out["next_step"]
 
 
+def test_satisfiable_names_the_fact_and_never_hands_over_the_solver_value(rt, monkeypatch):
+    """The solver's sample case is a point past the rule, not the rule. Handed "equal to 12.375", the
+    model told her the limit was 12.5 grams."""
+    monkeypatch.setenv("TALLY_PROVE", "on")
+    monkeypatch.setattr(prove, "prove", fake("SATISFIABLE", missing_facts=[
+        "childAgeYears is equal to 3; mealType is equal to MealType_SNACK; "
+        "yogurtAddedSugarsPer6Ounces is equal to 12.375; isYogurtCreditable is false"]))
+    out = prove_answer("Can I serve the yogurt at snack for the 3 to 5s?", "Yes.",
+                       "The meal is a snack. The children are 3 to 5. The label says 17 grams of sugar.")
+    assert out["turns_on"] == ["yogurt added sugars per 6 ounces"]
+    assert "yogurt added sugars per 6 ounces" in out["next_step"]
+    assert "12.375" not in str(out) and "missing_facts" not in out
+    assert rt.store.list_proofs()[0].missing_facts[0].count("12.375") == 1  # the receipt keeps it
+
+
 def test_impossible_tells_her_the_rule_and_stops(rt, monkeypatch):
     """Flavored milk for a 4 year old: the situation breaks the rule, so there is nothing to rewrite."""
     monkeypatch.setenv("TALLY_PROVE", "on")

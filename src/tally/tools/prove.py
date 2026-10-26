@@ -11,12 +11,14 @@ is the agent's, in the open. This tool only caps it.
 
 from __future__ import annotations
 
+import re
 import uuid
 
 from strands import tool
 
 from tally import ledger, prove, runtime
 from tally.models import Proof
+from tally.numbers import numbers_in
 
 MAX_ATTEMPTS = 3
 """Three proofs per question. After that the honest answer is "I could not verify this"."""
@@ -46,6 +48,36 @@ def _record(question: str, answer: str, facts: str, checked: prove.Checked, atte
     return p
 
 
+_STATEMENT = re.compile(r"^\s*([a-z]\w*) is (?:not )?(?:equal to|at least|no more than|greater than|less than"
+                        r"|more than|true|false)\s*(.*?)\s*$", re.IGNORECASE)
+
+
+def turns_on(missing_facts: list[str], given: str = "") -> list[str]:
+    """The facts an undecided answer turns on, as names to ask about, never as the solver's values.
+
+    The solver explains SATISFIABLE with a sample case, "yogurtAddedSugarsPer6Ounces is equal to
+    12.375". Handed that sentence, the model quoted 12.5 grams as the limit on a proved answer. The
+    name is the question to ask her; the number was only one point on the far side of the rule. A
+    fact she already gave, by value, is not asked again, and a claim about the answer itself
+    ("isYogurtCreditable is false") is not a fact about her plate.
+    """
+    have = set(numbers_in(given))
+    words = given.lower()
+    out: list[str] = []
+    for statement in missing_facts:
+        for part in re.split(r";|\band\b", statement):
+            m = _STATEMENT.match(part)
+            if not m or (m.group(1)[:2] == "is" and m.group(1)[2:3].isupper()):
+                continue
+            name, value = m.group(1), m.group(2)
+            if value and (set(numbers_in(value)) & have or value.split("_")[-1].lower() in words):
+                continue
+            human = re.sub(r"(?<=[a-z])(?=[A-Z0-9])|(?<=[0-9])(?=[A-Za-z])", " ", name).lower()
+            if " " in human and human not in out:
+                out.append(human)
+    return out[:2]
+
+
 def _next_step(p: Proof) -> str:
     """What the agent should do now, in words it can follow. The verdict decides, not the model."""
     if p.verdict == "VALID":
@@ -65,11 +97,13 @@ def _next_step(p: Proof) -> str:
         return (f"Contradicts the rules. Rewrite the answer so it agrees with this rule, then call "
                 f"prove_answer again with the rewritten answer: {rule}")
     if p.verdict in ("SATISFIABLE", "AMBIGUOUS"):
-        fact = p.missing_facts[0] if p.missing_facts else "the missing fact"
+        names = turns_on(p.missing_facts, f"{p.question} {p.facts}")
+        fact = " and ".join(names) if names else (p.missing_facts[0] if p.missing_facts else "the missing fact")
         if p.attempt >= MAX_ATTEMPTS:
-            return "Still undecided and no attempts are left. Tell her what it depends on."
-        return (f"Cannot be decided yet. Ask her one short question that settles this: {fact}. "
-                f"Then call prove_answer again with her answer in `facts`.")
+            return f"Still undecided and no attempts are left. Tell her it depends on {fact}."
+        return (f"Cannot be decided yet. It turns on {fact}. Ask her one short question about that. "
+                f"Any number the checker used to explain this is an example, not a limit: never quote "
+                f"it. Then call prove_answer again with her answer in `facts`.")
     if p.verdict == "SKIPPED":
         return "Proving is switched off. Answer as you would have, and say it is unchecked."
     if p.missing_facts and p.attempt < MAX_ATTEMPTS:
@@ -144,7 +178,9 @@ def prove_answer(question: str, answer: str, facts: str = "", meal_id: str = "")
         "rules": p.rules,
         "premises": p.premises,
         "claims": p.claims,
-        "missing_facts": p.missing_facts,
+        # Names, not the solver's sample values: the receipt keeps the raw scenario, the model gets
+        # what to ask. See turns_on.
+        "turns_on": turns_on(p.missing_facts, f"{question} {facts}"),
         "untranslated": p.untranslated,
         "latency_ms": p.latency_ms,
         "next_step": _next_step(p),
