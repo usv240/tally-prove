@@ -51,18 +51,22 @@ def enabled() -> bool:
 
 def config() -> dict:
     """Guardrail id and version: from the environment in production, from deployed.json locally."""
+    d = json.loads(DEPLOYED.read_text()) if DEPLOYED.exists() else {}
+    # The policy version comes from the build's record either way. Production names the guardrail in
+    # the environment, and without this its receipts said "policy unversioned".
+    policy = (f"{d['policy_arn']}:{d['policy_version']}" if d.get("policy_arn") and d.get("policy_version")
+              else os.environ.get("TALLY_POLICY_VERSION", ""))
     gid = os.environ.get("TALLY_GUARDRAIL_ID")
     ver = os.environ.get("TALLY_GUARDRAIL_VERSION")
     if gid and ver:
-        return {"guardrail_id": gid, "guardrail_version": ver}
-    if DEPLOYED.exists():
-        d = json.loads(DEPLOYED.read_text())
-        if d.get("guardrail_id") and d.get("guardrail_version"):
-            cfg = {"guardrail_id": d["guardrail_id"], "guardrail_version": str(d["guardrail_version"])}
-            if d.get("policy_arn") and d.get("policy_version"):
-                cfg["policy_version"] = f"{d['policy_arn']}:{d['policy_version']}"
-            return cfg
-    return {}
+        cfg = {"guardrail_id": gid, "guardrail_version": ver}
+    elif d.get("guardrail_id") and d.get("guardrail_version"):
+        cfg = {"guardrail_id": d["guardrail_id"], "guardrail_version": str(d["guardrail_version"])}
+    else:
+        return {}
+    if policy:
+        cfg["policy_version"] = policy
+    return cfg
 
 
 _RULES: dict[str, str] | None = None

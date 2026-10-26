@@ -189,3 +189,16 @@ def test_the_aws_request_id_travels_with_the_check():
 
     c = prove.prove("Q?", "A.", client=Fake(), cfg={"guardrail_id": "g", "guardrail_version": "2"})
     assert c.request_id == "req-123"
+
+
+def test_environment_config_still_carries_the_policy_version(tmp_path, monkeypatch):
+    # Production names the guardrail in the environment. Its receipts said "policy unversioned"
+    # because only the file path read the policy version.
+    f = tmp_path / "deployed.json"
+    f.write_text('{"guardrail_id": "g", "guardrail_version": 8, "policy_arn": "arn:p", "policy_version": 7}')
+    monkeypatch.setattr(prove, "DEPLOYED", f)
+    monkeypatch.setenv("TALLY_GUARDRAIL_ID", "env-g")
+    monkeypatch.setenv("TALLY_GUARDRAIL_VERSION", "9")
+    assert prove.config() == {"guardrail_id": "env-g", "guardrail_version": "9", "policy_version": "arn:p:7"}
+    monkeypatch.delenv("TALLY_GUARDRAIL_ID")
+    assert prove.config()["guardrail_version"] == "8"
