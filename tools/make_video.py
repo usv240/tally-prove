@@ -90,7 +90,8 @@ def probe(path: Path) -> float:
 
 def polly(text: str, out: Path) -> float:
     p = boto3.client("polly", region_name="us-east-1")
-    r = p.synthesize_speech(Text=text, VoiceId=VOICE, Engine="neural", OutputFormat="mp3")
+    # Generative, not neural: the same Matthew, with the phrasing of a person reading, not a list.
+    r = p.synthesize_speech(Text=text, VoiceId=VOICE, Engine="generative", OutputFormat="mp3")
     out.write_bytes(r["AudioStream"].read())
     return probe(out)
 
@@ -279,8 +280,12 @@ def main(base: str, out: str, only: set[str] | None = None) -> int:
     scene("06-after", "After. Same agent, same question. Watch the loop: draft, check, contradicted, rewrite. The receipt quotes the rule it broke: twelve grams of added sugars. And instead of guessing, Tally asks her the one fact that decides it.",
           s6, ramp=True, keep=11.5, prep=reset_day,
           # The narration names the 12 gram rule and a clean loop: check 1 contradicted, then a question.
+          # The newest receipt must not read PROVED: a proof of a hedged draft ("cannot confirm it
+          # qualifies") is correct, and in three seconds of video it looks like the tool contradicting
+          # itself. The scene ends on the contradiction and the question to her.
           good=lambda n: (any("CONTRADICTS" in c and "Check 1 of 3" in c and "12 grams" in c
                               for c in n.split("||")[0].split(" // "))
+                          and "PROVED" not in n.split("||")[0].split(" // ")[0]
                           and "OUTSIDE THE RULEBOOK" not in n and "?" in n.split("||")[-1]))
 
     # 7. She answers; proved; filed.
@@ -309,20 +314,6 @@ def main(base: str, out: str, only: set[str] | None = None) -> int:
           # the 12.5 gram limit" is true and still shows a remembered number on the money shot.
           good=lambda n: ("PROVED" in n and "filed in S3" in n and "From nowhere" not in n
                           and not any(x in n.split("// DRAFT")[-1] for x in ("12.5", "23"))))
-
-    # 7b. Under the hood: the tool inside the agent's own loop, from the trace.
-    def s7b(pg):
-        pg.goto(f"{base}/app.html", wait_until="networkidle")
-        dress(pg, "after:AFTER  ·  same agent, one new tool: prove_answer")
-        pg.locator("#tab-trace").click()
-        pg.wait_for_timeout(800)
-        rows = pg.locator(".trace-row").filter(has_text="Answer checked")
-        if rows.count():
-            point(rows.first, 4000)
-            point(rows.last, 4000)
-        return pg.locator("#trace").inner_text()
-    scene("07b-trace", "Under the hood, it is all in the agent's trace: each draft, each verdict, the rule, the receipt. The tool runs inside the agent's own loop, up to three checks, and the agent acts on every verdict.",
-          s7b, good=lambda n: "INVALID" in n and "VALID" in n.replace("INVALID", ""))
 
     # 8. The first thing it caught was us.
     c8 = card(cards / "8.html", "<div class='k'>Then we pointed the tool at Tally's own rulebook</div><h1 style='font-size:52px'>1 of 23 rules contradicted the regulation. It was ours.</h1><p><b style='color:#B42318'>INVALID</b>&nbsp; label_checks.yogurt_sugar<br>&ldquo;no more than 23 grams of sugar per 6 ounces&rdquo;<br><br>Fixed to 12 grams of <b>added</b> sugars. The audit now finds 0 of 23.</p>", 52, fonts)
@@ -386,11 +377,11 @@ def main(base: str, out: str, only: set[str] | None = None) -> int:
         s["audio"] = outdir / "raw" / f"{s['name']}.mp3"
         s["video"] = outdir / "raw" / f"{s['name']}.rec.mp4"
         meta = outdir / "raw" / f"{s['name']}.json"
-        if only and s["name"] not in only and s["audio"].exists() and s["video"].exists():
-            s["secs"] = probe(s["audio"])
+        if only and s["name"] not in only and s["video"].exists():
+            # The picture is kept; the narration is always made fresh, so a change of words or
+            # voice reaches every scene without re-recording the live ones.
             s["wait"] = json.loads(meta.read_text()).get("wait", 0.0) if meta.exists() else 0.0
             s["reuse"] = True
-            continue
         s["secs"] = polly(s["say"], s["audio"])
         print(f"  {s['name']:<12} narration {s['secs']:5.1f}s")
 
