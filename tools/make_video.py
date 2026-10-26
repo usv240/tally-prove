@@ -50,7 +50,7 @@ td.r{{text-align:right;font-variant-numeric:tabular-nums;font-weight:650}} tr.us
 .tools ol{{margin:0;padding:0;list-style:none;display:grid;gap:10px;font:500 26px/1.3 Mono,ui-monospace,monospace}}
 .tools li{{padding:10px 16px;border:1px solid #E4E2DC;border-radius:10px;background:#fff}}
 .tools li.new{{border:2px solid #0F6E56;background:#E7F4EE;color:#0F6E56;font-weight:700}}
-.flow{{display:flex;gap:14px;align-items:center;font-size:26px;flex-wrap:wrap}}
+.flow{{display:flex;gap:12px;align-items:center;font-size:23px;white-space:nowrap}}
 .flow b{{padding:8px 14px;border-radius:999px;border:2px solid currentColor;font-weight:650}}
 .ok{{color:#0F6E56}} .no{{color:#B42318}} .ask{{color:#9A5B00}}
 pre{{font:500 26px/1.5 Mono,ui-monospace,monospace;background:#1F2421;color:#F2F1EC;padding:28px 32px;border-radius:14px;margin:0;max-width:1100px;white-space:pre-wrap}}
@@ -61,8 +61,8 @@ pre i{{color:#8FD6B4;font-style:normal}}
 # a BEFORE or AFTER label that never leaves the frame, and a ring where the narration is pointing.
 DEMO_CSS = """
 html { zoom: 1.2; }
-.demo-badge { position: fixed; left: 50%; transform: translateX(-50%); bottom: 22px; z-index: 9999;
-  padding: 10px 20px; border-radius: 999px; font: 700 17px/1.2 Inter, system-ui, sans-serif;
+.demo-badge { position: fixed; left: 125px; top: 15px; z-index: 9999;
+  padding: 8px 18px; border-radius: 999px; font: 700 16px/1.2 Inter, system-ui, sans-serif;
   letter-spacing: .04em; box-shadow: 0 6px 24px rgba(0,0,0,.14); white-space: nowrap; }
 .demo-badge.before { background: #FDECEA; color: #B42318; border: 2px solid #B42318; }
 .demo-badge.after { background: #E7F4EE; color: #0F6E56; border: 2px solid #0F6E56; }
@@ -243,10 +243,14 @@ def main(base: str, out: str, only: set[str] | None = None) -> int:
         first = pg.locator(".proof").first
         point(first, 4500)
         point(first.locator(".stamp"), 4500)
-        return first.inner_text() + " || " + pg.locator("#ask-answer").inner_text()
+        draft = first.locator(".proof-a").first.inner_text() if first.locator(".proof-a").count() else ""
+        return first.inner_text() + " // DRAFT " + draft + " || " + pg.locator("#ask-answer").inner_text()
     scene("07-proved", "She answers: nine grams added. Proved. The receipt is filed in Amazon S3 with Object Lock, so no one, including us, can change it for three years.",
           s7, ramp=True, keep=9.5, prep=rebuild_for_follow,
-          good=lambda n: "PROVED" in n and "filed in S3" in n and "23" not in n.split("||")[-1])
+          # The proved draft must carry only numbers she or the regulation gave: a proof of "under
+          # the 12.5 gram limit" is true and still shows a remembered number on the money shot.
+          good=lambda n: ("PROVED" in n and "filed in S3" in n and "From nowhere" not in n
+                          and not any(x in n.split("// DRAFT")[-1] for x in ("12.5", "23"))))
 
     # 8. The first thing it caught was us.
     c8 = card(cards / "8.html", "<div class='k'>Then we pointed the tool at Tally's own rulebook</div><h1 style='font-size:52px'>1 of 23 rules contradicted the regulation. It was ours.</h1><p><b style='color:#B42318'>INVALID</b>&nbsp; label_checks.yogurt_sugar<br>&ldquo;no more than 23 grams of sugar per 6 ounces&rdquo;<br><br>Fixed to 12 grams of <b>added</b> sugars. The audit now finds 0 of 23.</p>", 52, fonts)
@@ -305,6 +309,7 @@ def main(base: str, out: str, only: set[str] | None = None) -> int:
                 if s["prep"]:
                     s["prep"](take)
                 marks.pop(s["name"], None)
+                t_ctx = time.time()
                 ctx = b.new_context(viewport={"width": W, "height": H}, record_video_dir=str(outdir / "raw"),
                                     record_video_size={"width": W, "height": H})
                 ctx.add_init_script("try{localStorage.setItem('tally-theme','light')}catch(e){}")
@@ -323,10 +328,15 @@ def main(base: str, out: str, only: set[str] | None = None) -> int:
                 video = pg.video
                 pg.close()
                 ctx.close()
+                t_end = time.time()
                 src = Path(video.path())
                 if s["video"].exists():
                     s["video"].unlink()
                 src.rename(s["video"])
+                if s["name"] in marks:
+                    # The recording starts with the context, not with t0, and its clock drifts from the
+                    # wall clock; place the arrival on the video's own timeline, a little early.
+                    wait = max(0.0, (marks[s["name"]] - t_ctx) * probe(s["video"]) / (t_end - t_ctx) - 0.4)
                 s["wait"] = wait
                 s["note"] = (str(note)[:6000].replace(chr(10), " ").encode("ascii", "replace").decode()
                              if isinstance(note, str) else "")
@@ -354,7 +364,7 @@ def main(base: str, out: str, only: set[str] | None = None) -> int:
             room = dur - real
             speed = max(1.0, wait / room)
             label = (f",drawtext=fontfile='{FONT}':text='Sped up {speed:.0f}x while the agent works':"
-                     "fontsize=26:fontcolor=white:box=1:boxcolor=0x1A1A1ACC:boxborderw=14:x=w-tw-40:y=40"
+                     "fontsize=26:fontcolor=white:box=1:boxcolor=0x1A1A1ACC:boxborderw=14:x=w-tw-40:y=h-th-40"
                      if speed >= 1.5 else "")
             vf = (f"[0:v]split=2[w][r];"
                   f"[w]trim=start=0:end={wait:.2f},setpts=(PTS-STARTPTS)/{speed:.4f}{label}[w2];"
